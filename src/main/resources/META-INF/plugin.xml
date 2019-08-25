@@ -27,4 +27,5 @@
     <actions>
         <!-- Add your actions here -->
     </actions>
+    <idea-version since-build="182"/>
 </idea-plugin>
