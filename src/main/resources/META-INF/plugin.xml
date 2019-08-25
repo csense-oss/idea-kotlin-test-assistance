@@ -1,0 +1,30 @@
+<idea-plugin>
+    <id>csense-idea.kotlin-test</id>
+    <name>Csense idea kotlin test assistance</name>
+    <vendor email="csense@tvedesys.dk" url="https://github.com/csense-oss/idea-kotlin-checked-exceptions">
+        Csense oss
+    </vendor>
+
+    <description><![CDATA[
+    A plugin that helps you with testing your code.<br/>
+    For example it provides:  <br/>
+    <ul>
+    <li> highlights functions that are missing tests</li>
+    <li> highlights classes that are not tested</li>
+    </ul>
+    ]]></description>
+
+
+    <depends>com.intellij.modules.lang</depends>
+    <depends>org.jetbrains.kotlin</depends>
+    <depends>com.intellij.modules.java</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <inspectionToolProvider
+                implementation="csense.idea.kotlin.test.inspections.InspectionsProvider"/>
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+    </actions>
+</idea-plugin>
