@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "csense-idea"
-version = "0.1"
+version = "0.2"
 
 
 intellij {
@@ -26,9 +26,10 @@ dependencies {
 
 tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml") {
     changeNotes("""
-      First version only includes 2 simple inspections. This is mostly to make it obvious when testing things what is missing.<br/> More will come later, 
-      for example some preliminary test code generation and or help. and more "intelligent" inspections.<br/> 
-      For now this only works on classes and not extensions for example. 
+      <ul>
+        <li>Top level functions & extensions working</li>
+        
+      </ul>
       """)
 }
 

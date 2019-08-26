@@ -55,16 +55,24 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
                 return@namedFunctionVisitor//ignore private & protected  methods
             }
             val timeInMs = measureTimeMillis {
-                if (isInTestModule(ourFunction)) {
+                if (ourFunction.isInTestModule()) {
                     return@namedFunctionVisitor
                 }
+
                 //step 2 is to find the test file in the test root
-                val testModule = findTestModule(ourFunction) ?: return@namedFunctionVisitor
-                val resultingDirectory = findPackageDir(testModule, ourFunction.containingKtFile)
-                val testFile = resultingDirectory?.let {
-                    findTestFile(it, ourFunction.containingKtFile)
-                } ?: return@namedFunctionVisitor
-                val haveTestFunction = haveTestOfMethod(ourFunction, testFile)
+                val testModule = ourFunction.findTestModule() ?: return@namedFunctionVisitor
+                val resultingDirectory = testModule.findPackageDir(ourFunction.containingKtFile)
+
+                val testFile = resultingDirectory?.findTestFile(ourFunction.containingKtFile)
+
+//                if (ourFunction.isTopLevel || ourFunction.isExtensionDeclaration()) {
+//                    val fixes = createQuickFixesForFunction(testFile, ourFunction)
+//                    holder.registerProblem(ourFunction.nameIdentifier ?: ourFunction,
+//                            "You have properly not tested this method",
+//                            *fixes)
+//                    return@namedFunctionVisitor
+//                }
+                val haveTestFunction = testFile?.haveTestOfMethod(ourFunction) == true
                 if (!haveTestFunction) {
                     val fixes = createQuickFixesForFunction(testFile, ourFunction)
                     holder.registerProblem(ourFunction.nameIdentifier ?: ourFunction,
@@ -78,92 +86,19 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
         }
     }
 
-    fun findTestFile(resultingDirectory: PsiDirectory, containingFile: KtFile): KtFile? {
-        val fileName = containingFile.virtualFile.nameWithoutExtension
-        val searchingForNames = listOf(fileName)
-        return resultingDirectory.files.find {
-            it.name.startsWithAny(searchingForNames)
-        } as? KtFile
-    }
+    fun createQuickFixesForFunction(file: KtFile?, ourFunction: KtNamedFunction): Array<LocalQuickFix> {
+        val firstClass = file?.classes?.firstOrNull()
+        val ktClassOrObject: KtClassOrObject = when (firstClass) {
+            is KtClassOrObject -> firstClass
+            is KtLightClass -> firstClass.kotlinOrigin ?: return arrayOf()
+            else -> return arrayOf()
+        }
 
-    fun haveTestOfMethod(ourFunction: KtNamedFunction, testFile: KtFile): Boolean {
-        val functionNamesToFind = setOf(
-                ourFunction.name ?: "",
+        return arrayOf(AddTestMethodQuickFix(
+                ourFunction,
                 "test" + ourFunction.name?.capitalize(),
-                ourFunction.name + "test")
-        return testFile.findDescendantOfType<KtNamedFunction> {
-            it.name?.startsWithAny(functionNamesToFind) ?: false
-        }.isNotNull
-    }
-
-    fun findPackageDir(testModule: Module, containingFile: KtFile): PsiDirectory? {
-        val packageName = containingFile.packageFqName.asString()
-        val sourceRoot = testModule.sourceRoots.find {
-            it.name == "kotlin"
-        } ?: return null
-        val psiDirectory = sourceRoot.toPsiDirectory(testModule.project) ?: return null
-        return if (packageName == "") {
-            psiDirectory
-        } else {
-            psiDirectory.findPackage(packageName)
-        }
-    }
-
-    fun isInTestModule(startingPoint: KtNamedFunction): Boolean {
-        val module = ModuleUtil.findModuleForPsiElement(startingPoint) ?: return false
-        return module.isTestModule()
-    }
-
-    fun Module.isTestModule(): Boolean {
-        return name.endsWith("_test") || name.endsWith(".test")
-    }
-
-    fun findTestModule(startingPoint: KtNamedFunction): Module? {
-        val module = ModuleUtil.findModuleForPsiElement(startingPoint) ?: return null
-        //step 2 is to find the test file in the test root
-        if (module.isTestModule()) {
-            return null
-        }
-
-        val searchingFor = module.name
-                .replace("_main", "_test")
-                .replace(".main", ".test")
-        return startingPoint.project.allModules().find { mod: Module ->
-            searchingFor == mod.name
-        }
-    }
-
-
-    fun createQuickFixesForFunction(file: KtFile, ourFunction: KtNamedFunction): Array<LocalQuickFix> {
-        val firstClass = file.classes.firstOrNull()
-        return if (firstClass != null) {
-
-            val ktClassOrObject: KtClassOrObject = when (firstClass) {
-                is KtClassOrObject -> firstClass
-                is KtLightClass ->
-                    firstClass.kotlinOrigin ?: return arrayOf()
-                else -> return arrayOf()
-            }
-
-            arrayOf(AddTestMethodQuickFix(
-                    ourFunction,
-                    "test" + ourFunction.name?.capitalize(),
-                    ktClassOrObject
-            ))
-        } else {
-            arrayOf()
-        }
+                ktClassOrObject
+        ))
     }
 }
 
-fun PsiDirectory.findPackage(packageName: String): PsiDirectory? {
-    if (packageName.isEmpty()) {
-        return null
-    }
-    val folders = packageName.split(".")
-    var resultingDirectory = this
-    folders.forEach {
-        resultingDirectory = resultingDirectory.findSubdirectory(it) ?: return null
-    }
-    return resultingDirectory
-}
