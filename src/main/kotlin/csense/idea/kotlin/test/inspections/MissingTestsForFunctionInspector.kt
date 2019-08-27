@@ -65,13 +65,10 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
 
                 val testFile = resultingDirectory?.findTestFile(ourFunction.containingKtFile)
 
-//                if (ourFunction.isTopLevel || ourFunction.isExtensionDeclaration()) {
-//                    val fixes = createQuickFixesForFunction(testFile, ourFunction)
-//                    holder.registerProblem(ourFunction.nameIdentifier ?: ourFunction,
-//                            "You have properly not tested this method",
-//                            *fixes)
-//                    return@namedFunctionVisitor
-//                }
+                if (testFile == null && !ourFunction.isTopLevel) {
+                    return@namedFunctionVisitor //skip class / obj functions if no test file is found
+                }
+
                 val haveTestFunction = testFile?.haveTestOfMethod(ourFunction) == true
                 if (!haveTestFunction) {
                     val fixes = createQuickFixesForFunction(testFile, ourFunction)
@@ -101,4 +98,3 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
         ))
     }
 }
-
