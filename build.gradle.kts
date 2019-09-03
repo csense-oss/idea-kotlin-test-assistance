@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "csense-idea"
-version = "0.4"
+version = "0.5"
 
 
 intellij {
@@ -27,7 +27,8 @@ dependencies {
 tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml") {
     changeNotes("""
       <ul>
-        <li>Top level functions & extensions working (failed in 0.3)</li>
+        <li>Empty classes & so on will not be marked. </li>
+        <li>companion object handled better </li>
       </ul>
       """)
 }

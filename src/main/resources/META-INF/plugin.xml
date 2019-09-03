@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>csense-idea.kotlin-test</id>
     <name>Csense - kotlin test assistance</name>
-    <vendor email="csense@tvedesys.dk" url="https://github.com/csense-oss/idea-kotlin-checked-exceptions">
+    <vendor email="csense@tvedesys.dk" url="https://github.com/csense-oss/idea-kotlin-test-assistance">
         Csense oss
     </vendor>
 
