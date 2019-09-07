@@ -44,14 +44,9 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
     override fun buildVisitor(holder: ProblemsHolder,
                               isOnTheFly: Boolean): KtVisitorVoid {
         return classOrObjectVisitor { ourClass ->
-            if (ourClass.isInTestModule()) {
-                return@classOrObjectVisitor
-            }
-
-
-            if (ourClass.hasModifier(KtTokens.COMPANION_KEYWORD)) {
-                //skip companion objects.
-                return@classOrObjectVisitor
+            if (ourClass.isInTestModule() ||
+                    ourClass.hasModifier(KtTokens.COMPANION_KEYWORD)) {
+                return@classOrObjectVisitor//skip companion objects.
             }
 
             //skip classes /things with no functions

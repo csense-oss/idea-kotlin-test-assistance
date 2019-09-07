@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "csense-idea"
-version = "0.5"
+version = "0.6"
 
 
 intellij {

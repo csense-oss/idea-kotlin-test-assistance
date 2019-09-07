@@ -28,6 +28,5 @@ build/
 *.iml
 local.properties
 *.kotlin_module
-csense-kotlin-js/out/
 *.js
 *.kjsm

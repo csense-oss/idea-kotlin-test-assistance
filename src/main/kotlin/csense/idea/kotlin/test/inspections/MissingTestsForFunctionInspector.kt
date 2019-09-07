@@ -51,13 +51,12 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
     override fun buildVisitor(holder: ProblemsHolder,
                               isOnTheFly: Boolean): KtVisitorVoid {
         return namedFunctionVisitor { ourFunction: KtNamedFunction ->
-            if (ourFunction.isPrivate() || ourFunction.isProtected()) {
+            if (ourFunction.isPrivate() ||
+                    ourFunction.isProtected() ||
+                    ourFunction.isInTestModule()) {
                 return@namedFunctionVisitor//ignore private & protected  methods
             }
             val timeInMs = measureTimeMillis {
-                if (ourFunction.isInTestModule()) {
-                    return@namedFunctionVisitor
-                }
 
                 //step 2 is to find the test file in the test root
                 val testModule = ourFunction.findTestModule() ?: return@namedFunctionVisitor

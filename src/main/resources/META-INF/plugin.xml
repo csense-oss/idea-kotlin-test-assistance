@@ -6,7 +6,7 @@
     </vendor>
 
     <description><![CDATA[
-    A plugin that helps you with testing your code.<br/>
+    A plugin that helps you with testing your code.(junit only at this time)<br/>
     For example it provides:  <br/>
     <ul>
     <li> highlights functions that are missing tests</li>
