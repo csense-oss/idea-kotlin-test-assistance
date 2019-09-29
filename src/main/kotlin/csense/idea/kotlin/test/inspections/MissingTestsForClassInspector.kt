@@ -45,9 +45,11 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
                               isOnTheFly: Boolean): KtVisitorVoid {
         return classOrObjectVisitor { ourClass ->
             if (ourClass.isInTestModule() ||
-                    ourClass.hasModifier(KtTokens.COMPANION_KEYWORD)) {
-                return@classOrObjectVisitor//skip companion objects.
+                    ourClass.hasModifier(KtTokens.COMPANION_KEYWORD) ||
+                    ourClass.containingKtFile.shouldIgnore()) {
+                return@classOrObjectVisitor//skip companion objects / non kt files.
             }
+
 
             //skip classes /things with no functions
             val functions = ourClass.getAllFunctions()

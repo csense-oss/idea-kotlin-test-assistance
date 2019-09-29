@@ -2,17 +2,10 @@ package csense.idea.kotlin.test.inspections
 
 import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
-import com.intellij.openapi.module.*
-import com.intellij.psi.*
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.quickfixes.*
-import csense.kotlin.extensions.*
-import csense.kotlin.extensions.primitives.*
 import org.jetbrains.kotlin.asJava.classes.*
 import org.jetbrains.kotlin.idea.inspections.*
-import org.jetbrains.kotlin.idea.refactoring.*
-import org.jetbrains.kotlin.idea.util.*
-import org.jetbrains.kotlin.idea.util.projectStructure.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 import kotlin.system.*
@@ -53,8 +46,9 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
         return namedFunctionVisitor { ourFunction: KtNamedFunction ->
             if (ourFunction.isPrivate() ||
                     ourFunction.isProtected() ||
-                    ourFunction.isInTestModule()) {
-                return@namedFunctionVisitor//ignore private & protected  methods
+                    ourFunction.isInTestModule() ||
+                    ourFunction.containingKtFile.shouldIgnore()) {
+                return@namedFunctionVisitor//ignore private & protected  methods / non kt files.
             }
             val timeInMs = measureTimeMillis {
 
@@ -68,8 +62,18 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
                     return@namedFunctionVisitor //skip class / obj functions if no test file is found
                 }
 
-                val haveTestFunction = testFile?.haveTestOfMethod(ourFunction) == true
-                if (!haveTestFunction) {
+
+                val methodName: String?
+                val overLoads = ourFunction.haveOverloads()
+                methodName = if (overLoads) {
+                    ourFunction.name + ourFunction.firstParameterNameCapOrDash()
+                } else {
+                    ourFunction.name
+                }
+
+                val haveTestFunction = testFile?.haveTestOfMethodName(methodName) == true
+                val haveTestObject = testFile?.haveTestObjectOfMethodName(methodName) == true
+                if (!haveTestFunction && !haveTestObject) {
                     val fixes = createQuickFixesForFunction(testFile, ourFunction)
                     holder.registerProblem(ourFunction.nameIdentifier ?: ourFunction,
                             "You have properly not tested this method",
@@ -82,9 +86,9 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
         }
     }
 
+
     fun createQuickFixesForFunction(file: KtFile?, ourFunction: KtNamedFunction): Array<LocalQuickFix> {
-        val firstClass = file?.classes?.firstOrNull()
-        val ktClassOrObject: KtClassOrObject = when (firstClass) {
+        val ktClassOrObject: KtClassOrObject = when (val firstClass = file?.classes?.firstOrNull()) {
             is KtClassOrObject -> firstClass
             is KtLightClass -> firstClass.kotlinOrigin ?: return arrayOf()
             else -> return arrayOf()
@@ -96,4 +100,9 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
                 ktClassOrObject
         ))
     }
+}
+
+
+fun KtNamedFunction.firstParameterNameCapOrDash(): String {
+    return valueParameters.firstOrNull()?.name?.capitalize() ?: "-"
 }

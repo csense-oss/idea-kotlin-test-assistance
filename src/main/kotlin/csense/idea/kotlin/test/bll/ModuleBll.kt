@@ -1,14 +1,20 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package csense.idea.kotlin.test.bll
 
+import com.intellij.openapi.fileTypes.*
 import com.intellij.openapi.module.*
 import com.intellij.psi.*
 import csense.kotlin.extensions.*
 import csense.kotlin.extensions.primitives.*
+import org.jetbrains.kotlin.idea.*
 import org.jetbrains.kotlin.idea.refactoring.*
 import org.jetbrains.kotlin.idea.util.*
 import org.jetbrains.kotlin.idea.util.projectStructure.*
+import org.jetbrains.kotlin.lexer.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
+import org.jetbrains.kotlin.psi.stubs.elements.*
 
 
 fun PsiDirectory.findTestFile(containingFile: KtFile): KtFile? {
@@ -27,14 +33,32 @@ fun PsiDirectory.findTestFile(vararg fileNames: String): KtFile? {
 }
 
 
-fun KtFile.haveTestOfMethod(ourFunction: KtNamedFunction): Boolean {
+fun KtFile.haveTestOfMethodName(ourFunction: String?): Boolean {
     val functionNamesToFind = setOf(
-            ourFunction.name ?: "",
-            "test" + ourFunction.name?.capitalize(),
-            ourFunction.name + "test")
+            ourFunction ?: "",
+            "test" + ourFunction?.capitalize(),
+            ourFunction + "test")
     return findDescendantOfType<KtNamedFunction> {
-        it.name?.startsWithAny(functionNamesToFind) ?: false
+        it.containingClassOrObject?.isTopLevel() == true &&
+                it.name?.startsWithAny(functionNamesToFind) ?: false
     }.isNotNull
+}
+
+fun KtFile.haveTestObjectOfMethodName(ourFunction: String?): Boolean {
+    val functionNamesToFind = setOf(
+            ourFunction ?: "",
+            "test" + ourFunction?.capitalize(),
+            ourFunction + "test")
+    return findDescendantOfType<KtClassOrObject> {
+        it.name?.decapitalize()?.startsWithAny(
+                functionNamesToFind) ?: false
+    }.isNotNull
+}
+
+
+fun KtFile.shouldIgnore(): Boolean {
+    return this.fileType != KotlinLanguage.INSTANCE.associatedFileType ||
+            !this.virtualFilePath.endsWithAny(".kt", ".kts")
 }
 
 fun Module.findPackageDir(containingFile: KtFile): PsiDirectory? {
@@ -84,4 +108,37 @@ fun PsiDirectory.findPackage(packageName: String): PsiDirectory? {
         resultingDirectory = resultingDirectory.findSubdirectory(it) ?: return null
     }
     return resultingDirectory
+}
+
+
+inline fun KtNamedFunction.haveOverloads(): Boolean {
+    //use class or object if there, or if we are toplevel use the file to search.
+    containingClassOrObject?.let {
+        return haveOverloads(it)
+    }
+    return haveOverloads(containingKtFile)
+}
+
+inline fun KtNamedFunction.haveOverloads(containingFile: KtFile): Boolean {
+    return containingFile.countDescendantOfType<KtNamedFunction> {
+        it.isTopLevel && it.name == this.name
+    } > 1
+}
+
+inline fun KtNamedFunction.haveOverloads(containerClassOrObject: KtClassOrObject): Boolean {
+    return containerClassOrObject.countDescendantOfType<KtNamedFunction> {
+        it.name == this.name
+    } > 1
+}
+
+inline fun <reified T : PsiElement> PsiElement.countDescendantOfType(
+        noinline predicate: (T) -> Boolean
+): Int {
+    var counter = 0
+    forEachDescendantOfType<T> {
+        if (predicate(it)) {
+            counter += 1
+        }
+    }
+    return counter
 }

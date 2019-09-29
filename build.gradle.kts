@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "csense-idea"
-version = "0.6"
+version = "0.7"
 
 
 intellij {
@@ -27,8 +27,7 @@ dependencies {
 tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml") {
     changeNotes("""
       <ul>
-        <li>Empty classes & so on will not be marked. </li>
-        <li>companion object handled better </li>
+        <li>Highlights empty tests that are not maked @Ignore - fixed issue where non empty tests was marked.</li>
       </ul>
       """)
 }
