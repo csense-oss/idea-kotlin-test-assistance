@@ -4,8 +4,10 @@ import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.quickfixes.*
+import csense.kotlin.extensions.*
 import org.jetbrains.kotlin.asJava.classes.*
 import org.jetbrains.kotlin.idea.inspections.*
+import org.jetbrains.kotlin.idea.refactoring.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 import kotlin.system.*
@@ -46,8 +48,9 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
         return namedFunctionVisitor { ourFunction: KtNamedFunction ->
             if (ourFunction.isPrivate() ||
                     ourFunction.isProtected() ||
-                    ourFunction.isInTestModule() ||
-                    ourFunction.containingKtFile.shouldIgnore()) {
+                    ourFunction.isAbstract() ||
+                    ourFunction.containingKtFile.shouldIgnore() ||
+                    ourFunction.isInTestModule()) {
                 return@namedFunctionVisitor//ignore private & protected  methods / non kt files.
             }
             val timeInMs = measureTimeMillis {
@@ -63,16 +66,9 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
                 }
 
 
-                val methodName: String?
-                val overLoads = ourFunction.haveOverloads()
-                methodName = if (overLoads) {
-                    ourFunction.name + ourFunction.firstParameterNameCapOrDash()
-                } else {
-                    ourFunction.name
-                }
-
-                val haveTestFunction = testFile?.haveTestOfMethodName(methodName) == true
-                val haveTestObject = testFile?.haveTestObjectOfMethodName(methodName) == true
+                val namesToLookAt = ourFunction.computeViableNames()
+                val haveTestFunction = testFile?.haveTestOfMethodName(namesToLookAt) == true
+                val haveTestObject = testFile?.haveTestObjectOfMethodName(namesToLookAt) == true
                 if (!haveTestFunction && !haveTestObject) {
                     val fixes = createQuickFixesForFunction(testFile, ourFunction)
                     holder.registerProblem(ourFunction.nameIdentifier ?: ourFunction,
@@ -88,21 +84,76 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
 
 
     fun createQuickFixesForFunction(file: KtFile?, ourFunction: KtNamedFunction): Array<LocalQuickFix> {
-        val ktClassOrObject: KtClassOrObject = when (val firstClass = file?.classes?.firstOrNull()) {
-            is KtClassOrObject -> firstClass
-            is KtLightClass -> firstClass.kotlinOrigin ?: return arrayOf()
-            else -> return arrayOf()
-        }
-
+        val ktClassOrObject = file?.collectDescendantsOfType<KtClassOrObject>()?.firstOrNull()
+                ?: return arrayOf()
+        val testName = ourFunction.computeMostPreciseName()
         return arrayOf(AddTestMethodQuickFix(
                 ourFunction,
-                "test" + ourFunction.name?.capitalize(),
+                testName,
                 ktClassOrObject
         ))
     }
+
+
+}
+
+fun KtNamedFunction.computeMostPreciseName(): String {
+    val safeName = name ?: ""
+    if (isExtensionDeclaration()) {
+        val extensionName = receiverTypeReference?.text?.replace("?", "")?.decapitalize()
+        return if (haveOverloads()) {
+            val firstParamName = firstParameterNameOrEmpty()
+            extensionName?.plus(safeName.capitalize())?.plus(firstParamName) ?: safeName
+        } else {
+            extensionName?.plus(safeName.capitalize()) ?: safeName
+        }
+    }
+    if (haveOverloads()) {
+        val firstParamName = firstParameterNameOrEmpty()
+        return safeName + firstParamName
+    }
+    return safeName
 }
 
 
-fun KtNamedFunction.firstParameterNameCapOrDash(): String {
-    return valueParameters.firstOrNull()?.name?.capitalize() ?: "-"
+fun KtNamedFunction.firstParameterNameOrEmpty(): String {
+    return valueParameters.firstOrNull()?.name?.capitalize() ?: ""
+}
+
+fun KtNamedFunction.firstParameterTypeCapOrEmpty(): String {
+    //TODO consider that this could open op say "optString" or alike ways of expression the optionality.
+    return valueParameters.firstOrNull()?.typeReference?.text?.replace("?", "")
+            ?: ""
+}
+
+fun KtNamedFunction.computeViableNames(): List<String> {
+    val overLoads = haveOverloads()
+    val safeName = name ?: ""
+
+    val regularNames = if (overLoads) {
+        //overloads opens up 2 things
+        // firstParameterName
+        // firstParameterType
+        //if an extension then also
+        // typeSafeName
+        listOfNotNull(
+                safeName + firstParameterNameOrEmpty(),
+                safeName + firstParameterTypeCapOrEmpty()
+
+        )
+    } else {
+        //no overloads; so just the name should be sufficient.
+        listOf(safeName)
+    }
+    val extensions = if (isExtensionDeclaration()) {
+        val extensionName = receiverTypeReference?.text?.replace("?", "")
+        listOfNotNull(
+                extensionName?.let { it.decapitalize() + safeName.capitalize() },
+                extensionName?.let { it + safeName.capitalize() },
+                extensionName?.let { it + safeName.capitalize() + firstParameterNameOrEmpty() },
+                extensionName?.let { it + safeName.capitalize() + firstParameterTypeCapOrEmpty() })
+    } else {
+        listOf()
+    }
+    return regularNames + extensions
 }

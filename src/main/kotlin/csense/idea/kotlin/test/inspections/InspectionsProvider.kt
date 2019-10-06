@@ -7,7 +7,8 @@ class InspectionsProvider : InspectionToolProvider {
         return arrayOf(
                 MissingTestsForFunctionInspector::class.java,
                 MissingTestsForClassInspector::class.java,
-                EmptyTestInspection::class.java
+                EmptyTestInspection::class.java,
+                MissingTestsForPropertyInspector::class.java
         )
     }
 }

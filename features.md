@@ -1,23 +1,31 @@
-# Current
+# Current things to consider
+- multiple overloads with same arg names
+```kotlin
+fun String.magic(a: Int){
 
+}
+fun String.magic(a: Int, b: Int){
 
-# Updates / todo
-- functions with overload (currently not handled)
-- sub object containers 
-    ```kotlin
-  class MyTest{
-      object Function{
-          @Test
-          fun testEmpty(){}
-      }
-  }
-    ```
-- handle things such as markdown.. (so  no highlighting in markdown)
+}
+```
+could be solved by stating that all parts of the name should be in fun name. 
+```kotlin
+@Test
+fun magicA(){}
+@Test
+fun magicAB(){}
+``` 
 
-# Planned
+but it still does not solve
+```kotlin
+fun String.magic(a: Int, b: Char){
 
-# Ideas
-- mark empty tests (functions marked with @Test but with no real code in them)
-    - quickfix is  add @Ignore
-    
+}
+fun String.magic(a: Int, b: Int){
 
+}
+```
+
+But at this point it might also be a signal that some of the code might be weird ? hmm
+
+----------------------------

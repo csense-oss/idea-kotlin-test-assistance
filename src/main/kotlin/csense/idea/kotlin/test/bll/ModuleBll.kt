@@ -2,7 +2,6 @@
 
 package csense.idea.kotlin.test.bll
 
-import com.intellij.openapi.fileTypes.*
 import com.intellij.openapi.module.*
 import com.intellij.psi.*
 import csense.kotlin.extensions.*
@@ -11,10 +10,8 @@ import org.jetbrains.kotlin.idea.*
 import org.jetbrains.kotlin.idea.refactoring.*
 import org.jetbrains.kotlin.idea.util.*
 import org.jetbrains.kotlin.idea.util.projectStructure.*
-import org.jetbrains.kotlin.lexer.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
-import org.jetbrains.kotlin.psi.stubs.elements.*
 
 
 fun PsiDirectory.findTestFile(containingFile: KtFile): KtFile? {
@@ -25,34 +22,34 @@ fun PsiDirectory.findTestFile(containingFile: KtFile): KtFile? {
     } as? KtFile
 }
 
-fun PsiDirectory.findTestFile(vararg fileNames: String): KtFile? {
-    val fileNameList = fileNames.toList()
-    return files.find {
-        it.name.startsWithAny(fileNameList)
-    } as? KtFile
-}
+//fun PsiDirectory.findTestFile(vararg fileNames: String): KtFile? {
+//    val fileNameList = fileNames.toList()
+//    return files.find {
+//        it.name.startsWithAny(fileNameList)
+//    } as? KtFile
+//}
 
 
-fun KtFile.haveTestOfMethodName(ourFunction: String?): Boolean {
+fun KtFile.haveTestOfMethodName(fnNames: List<String>): Boolean = fnNames.any { ourFunction ->
     val functionNamesToFind = setOf(
-            ourFunction ?: "",
-            "test" + ourFunction?.capitalize(),
+            ourFunction,
+            "test" + ourFunction.capitalize(),
             ourFunction + "test")
-    return findDescendantOfType<KtNamedFunction> {
+    haveDescendantOfType<KtNamedFunction> {
         it.containingClassOrObject?.isTopLevel() == true &&
-                it.name?.startsWithAny(functionNamesToFind) ?: false
-    }.isNotNull
+                functionNamesToFind.contains(it.name)
+    }
 }
 
-fun KtFile.haveTestObjectOfMethodName(ourFunction: String?): Boolean {
+fun KtFile.haveTestObjectOfMethodName(fnNames: List<String>): Boolean = fnNames.any { ourFunction ->
     val functionNamesToFind = setOf(
-            ourFunction ?: "",
-            "test" + ourFunction?.capitalize(),
+            ourFunction,
+            "test" + ourFunction.capitalize(),
             ourFunction + "test")
-    return findDescendantOfType<KtClassOrObject> {
+    haveDescendantOfType<KtClassOrObject> {
         it.name?.decapitalize()?.startsWithAny(
                 functionNamesToFind) ?: false
-    }.isNotNull
+    }
 }
 
 
@@ -141,4 +138,9 @@ inline fun <reified T : PsiElement> PsiElement.countDescendantOfType(
         }
     }
     return counter
+}
+
+inline fun <reified T : PsiElement> PsiElement.haveDescendantOfType(
+        noinline predicate: (T) -> Boolean): Boolean {
+    return findDescendantOfType(predicate).isNotNull
 }
