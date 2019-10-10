@@ -24,7 +24,7 @@ class MissingTestsForPropertyInspector : AbstractKotlinInspection() {
     }
 
     override fun getDescriptionFileName(): String? {
-        return "Highlights properties with custom getter / setterthat are missing test(s) "
+        return "Highlights properties with custom getter / setter that are missing test(s) "
     }
 
     override fun getShortName(): String {
@@ -83,7 +83,7 @@ class MissingTestsForPropertyInspector : AbstractKotlinInspection() {
         val ktClassOrObject = file?.collectDescendantsOfType<KtClassOrObject>()?.firstOrNull()
                 ?: return arrayOf()
         val testName = ourProp.computeMostPreciseName()
-        return arrayOf(AddTestMethodQuickFix(
+        return arrayOf(AddTestPropertyQuickFix(
                 ourProp,
                 testName,
                 ktClassOrObject
@@ -96,7 +96,7 @@ class MissingTestsForPropertyInspector : AbstractKotlinInspection() {
 fun KtProperty.computeViableNames(): List<String> {
     val safeName = name ?: ""
     val extensionNames: List<String> = if (isExtensionDeclaration()) {
-        val extName = receiverTypeReference?.text?.replace("?", "")?.decapitalize()
+        val extName = receiverTypeReference?.text?.safeDecapitizedFunctionName()
         return listOfNotNull(extName + safeName.capitalize())
     } else {
         listOf()
@@ -112,7 +112,7 @@ fun KtProperty.hasCustomSetterGetter(): Boolean {
 
 fun KtProperty.computeMostPreciseName(): String {
     return if (isExtensionDeclaration()) {
-        val extensionName = receiverTypeReference?.text?.replace("?", "")?.decapitalize()
+        val extensionName = receiverTypeReference?.text?.safeDecapitizedFunctionName()
         extensionName?.plus(name?.capitalize() ?: "") ?: name ?: ""
     } else {
         name ?: ""

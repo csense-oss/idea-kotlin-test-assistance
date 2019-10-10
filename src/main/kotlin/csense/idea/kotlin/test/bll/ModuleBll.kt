@@ -22,14 +22,6 @@ fun PsiDirectory.findTestFile(containingFile: KtFile): KtFile? {
     } as? KtFile
 }
 
-//fun PsiDirectory.findTestFile(vararg fileNames: String): KtFile? {
-//    val fileNameList = fileNames.toList()
-//    return files.find {
-//        it.name.startsWithAny(fileNameList)
-//    } as? KtFile
-//}
-
-
 fun KtFile.haveTestOfMethodName(fnNames: List<String>): Boolean = fnNames.any { ourFunction ->
     val functionNamesToFind = setOf(
             ourFunction,

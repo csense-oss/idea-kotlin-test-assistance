@@ -100,19 +100,19 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
 fun KtNamedFunction.computeMostPreciseName(): String {
     val safeName = name ?: ""
     if (isExtensionDeclaration()) {
-        val extensionName = receiverTypeReference?.text?.replace("?", "")?.decapitalize()
+        val extensionName = receiverTypeReference?.text
         return if (haveOverloads()) {
             val firstParamName = firstParameterNameOrEmpty()
             extensionName?.plus(safeName.capitalize())?.plus(firstParamName) ?: safeName
         } else {
             extensionName?.plus(safeName.capitalize()) ?: safeName
-        }
+        }.safeDecapitizedFunctionName()
     }
     if (haveOverloads()) {
         val firstParamName = firstParameterNameOrEmpty()
-        return safeName + firstParamName
+        return (safeName + firstParamName).safeFunctionName()
     }
-    return safeName
+    return safeName.safeDecapitizedFunctionName()
 }
 
 
@@ -146,7 +146,7 @@ fun KtNamedFunction.computeViableNames(): List<String> {
         listOf(safeName)
     }
     val extensions = if (isExtensionDeclaration()) {
-        val extensionName = receiverTypeReference?.text?.replace("?", "")
+        val extensionName = receiverTypeReference?.text?.safeFunctionName()?.decapitalize()
         listOfNotNull(
                 extensionName?.let { it.decapitalize() + safeName.capitalize() },
                 extensionName?.let { it + safeName.capitalize() },

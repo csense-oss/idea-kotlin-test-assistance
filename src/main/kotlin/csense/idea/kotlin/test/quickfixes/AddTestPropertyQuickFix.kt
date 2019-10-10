@@ -8,14 +8,14 @@ import csense.idea.kotlin.test.bll.*
 import org.jetbrains.kotlin.idea.util.application.*
 import org.jetbrains.kotlin.psi.*
 
-class AddTestMethodQuickFix(
-        element: KtNamedFunction,
+class AddTestPropertyQuickFix(
+        element: PsiElement,
         val testName: String,
         val whereToWrite: KtClassOrObject
 ) : LocalQuickFixOnPsiElement(element) {
 
     override fun getText(): String {
-        return "Add test for this method"
+        return "Add test for this property"
     }
 
     override fun getFamilyName(): String {
@@ -29,15 +29,14 @@ class AddTestMethodQuickFix(
             startElement: PsiElement,
             endElement: PsiElement
     ) {
-        val fnc = startElement as? KtNamedFunction ?: return
-        val code = fnc.computeMostViableSimpleTestData()
-
-        val safeTestName = testName.safeFunctionName()
+        val prop = startElement as KtProperty
+        val safeName = testName.safeFunctionName()
+        val code = prop.computeMostViableSimpleTestData()
         val ktPsiFactory = KtPsiFactory(project)
         val testMethod = ktPsiFactory.createFunction(
                 """@Test
-                   fun $safeTestName(){
-                       //TODO make me.
+                   fun $safeName(){
+                       //TODO make me
                        ${code.joinToString("\n")}
                    }
                 """.trimMargin())
