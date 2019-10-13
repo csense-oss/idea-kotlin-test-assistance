@@ -50,6 +50,10 @@ class MissingTestsForPropertyInspector : AbstractKotlinInspection() {
                     prop.isInTestModule()) {
                 return@propertyVisitor//ignore private & protected  methods / non kt files.
             }
+
+            if (prop.hasConstantCustomGetterOnly()) {
+                return@propertyVisitor
+            }
             val timeInMs = measureTimeMillis {
 
                 //step 2 is to find the test file in the test root
@@ -109,6 +113,27 @@ fun KtProperty.hasCustomSetterGetter(): Boolean {
     return getter != null || setter != null
 }
 
+fun KtProperty.hasConstantCustomGetterOnly(): Boolean {
+    return getter != null && setter == null && isGetterConstant()
+}
+
+fun KtProperty.isGetterConstant(): Boolean {
+    val exp = getter?.bodyBlockExpression ?: getter?.bodyExpression ?: return false
+    return exp.isConstant()
+}
+
+fun KtExpression.isConstant(): Boolean = when (this) {
+    is KtConstantExpression -> {
+        true
+    }
+    is KtStringTemplateExpression -> {
+        this.isConstant()
+    }
+    else -> false
+}
+
+fun KtStringTemplateExpression.isConstant(): Boolean =
+        isPlainWithEscapes()
 
 fun KtProperty.computeMostPreciseName(): String {
     return if (isExtensionDeclaration()) {
