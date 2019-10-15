@@ -65,13 +65,15 @@ class MissingTestsForPropertyInspector : AbstractKotlinInspection() {
                 if (testFile == null && !prop.isTopLevel) {
                     return@propertyVisitor //skip class / obj functions if no test file is found
                 }
-
-
                 val namesToLookAt = prop.computeViableNames()
-                val haveTestFunction = testFile?.haveTestOfMethodName(namesToLookAt) == true
-                val haveTestObject = testFile?.haveTestObjectOfMethodName(namesToLookAt) == true
-                if (!haveTestFunction && !haveTestObject) {
-                    val fixes = createQuickFixesForFunction(testFile, prop)
+                val haveTestOfMethod = testFile?.haveTestOfMethod(
+                        namesToLookAt,
+                        prop.containingKtFile,
+                        prop.containingClassOrObject
+                ) == true
+                if (!haveTestOfMethod) {
+                    val testClass = testFile?.findMostSuitableTestClass(prop.containingClassOrObject)
+                    val fixes = createQuickFixesForFunction(testClass, prop)
                     holder.registerProblem(prop.nameIdentifier ?: prop,
                             "You have properly not tested this property (getter/setter)",
                             *fixes)
@@ -83,9 +85,8 @@ class MissingTestsForPropertyInspector : AbstractKotlinInspection() {
         }
     }
 
-    fun createQuickFixesForFunction(file: KtFile?, ourProp: KtProperty): Array<LocalQuickFix> {
-        val ktClassOrObject = file?.collectDescendantsOfType<KtClassOrObject>()?.firstOrNull()
-                ?: return arrayOf()
+    fun createQuickFixesForFunction(testClass: KtClassOrObject?, ourProp: KtProperty): Array<LocalQuickFix> {
+        val ktClassOrObject = testClass ?: return arrayOf()
         val testName = ourProp.computeMostPreciseName()
         return arrayOf(AddTestPropertyQuickFix(
                 ourProp,
@@ -118,7 +119,7 @@ fun KtProperty.hasConstantCustomGetterOnly(): Boolean {
 }
 
 fun KtProperty.isGetterConstant(): Boolean {
-    val exp = getter?.bodyBlockExpression ?: getter?.bodyExpression ?: return false
+    val exp = getterBody ?: return false
     return exp.isConstant()
 }
 
@@ -128,6 +129,12 @@ fun KtExpression.isConstant(): Boolean = when (this) {
     }
     is KtStringTemplateExpression -> {
         this.isConstant()
+    }
+    is KtBlockExpression -> {
+        children.size == 1 && (children[0] as KtExpression).isConstant()
+    }
+    is KtReturnExpression -> {
+        children.size == 1 && (children[0] as KtExpression).isConstant()
     }
     else -> false
 }
@@ -143,3 +150,9 @@ fun KtProperty.computeMostPreciseName(): String {
         name ?: ""
     }
 }
+
+
+val KtProperty.getterBody: KtExpression?
+    get() {
+        return getter?.getChildOfType<KtExpression>()
+    }

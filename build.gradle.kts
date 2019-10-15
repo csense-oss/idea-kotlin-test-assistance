@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "csense-idea"
-version = "0.9"
+version = "0.100"
 
 
 intellij {
@@ -27,9 +27,7 @@ dependencies {
 tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml") {
     changeNotes("""
       <ul>
-        <li>A lot of fixes (eg for companion extensions and such things)</li>
-        <li>Add test now inserts a predefined list of possible "good" test values to build on</li>
-        <li>Do not require test for constant expression getters. </li>
+        <li>Now allows for multiple classes in a single file & then also in the test file. (test class should start with same name as real class, eg prepend "test").</li>
       </ul>
       """)
 }

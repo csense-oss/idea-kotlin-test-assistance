@@ -4,8 +4,6 @@ import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.quickfixes.*
-import csense.kotlin.extensions.*
-import org.jetbrains.kotlin.asJava.classes.*
 import org.jetbrains.kotlin.idea.inspections.*
 import org.jetbrains.kotlin.idea.refactoring.*
 import org.jetbrains.kotlin.psi.*
@@ -64,13 +62,15 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
                 if (testFile == null && !ourFunction.isTopLevel) {
                     return@namedFunctionVisitor //skip class / obj functions if no test file is found
                 }
-
-
                 val namesToLookAt = ourFunction.computeViableNames()
-                val haveTestFunction = testFile?.haveTestOfMethodName(namesToLookAt) == true
-                val haveTestObject = testFile?.haveTestObjectOfMethodName(namesToLookAt) == true
-                if (!haveTestFunction && !haveTestObject) {
-                    val fixes = createQuickFixesForFunction(testFile, ourFunction)
+                val haveTestOfMethod = testFile?.haveTestOfMethod(
+                        namesToLookAt,
+                        ourFunction.containingKtFile,
+                        ourFunction.containingClassOrObject
+                ) == true
+                if (!haveTestOfMethod) {
+                    val testClass = testFile?.findMostSuitableTestClass(ourFunction.containingClassOrObject)
+                    val fixes = createQuickFixesForFunction(testClass, ourFunction)
                     holder.registerProblem(ourFunction.nameIdentifier ?: ourFunction,
                             "You have properly not tested this method",
                             *fixes)
@@ -83,9 +83,8 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
     }
 
 
-    fun createQuickFixesForFunction(file: KtFile?, ourFunction: KtNamedFunction): Array<LocalQuickFix> {
-        val ktClassOrObject = file?.collectDescendantsOfType<KtClassOrObject>()?.firstOrNull()
-                ?: return arrayOf()
+    fun createQuickFixesForFunction(testClass: KtClassOrObject?, ourFunction: KtNamedFunction): Array<LocalQuickFix> {
+        val ktClassOrObject = testClass ?: return arrayOf()
         val testName = ourFunction.computeMostPreciseName()
         return arrayOf(AddTestMethodQuickFix(
                 ourFunction,
