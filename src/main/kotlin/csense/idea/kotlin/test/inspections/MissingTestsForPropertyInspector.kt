@@ -72,7 +72,9 @@ class MissingTestsForPropertyInspector : AbstractKotlinInspection() {
                         prop.containingClassOrObject
                 ) == true
                 if (!haveTestOfMethod) {
-                    val testClass = testFile?.findMostSuitableTestClass(prop.containingClassOrObject)
+                    val testClass = testFile?.findMostSuitableTestClass(
+                            prop.containingClassOrObject,
+                            prop.containingKtFile.virtualFile.nameWithoutExtension)
                     val fixes = createQuickFixesForFunction(testClass, prop)
                     holder.registerProblem(prop.nameIdentifier ?: prop,
                             "You have properly not tested this property (getter/setter)",

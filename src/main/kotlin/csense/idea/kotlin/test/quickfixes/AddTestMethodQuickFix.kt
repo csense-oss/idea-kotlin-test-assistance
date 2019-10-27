@@ -3,7 +3,6 @@ package csense.idea.kotlin.test.quickfixes
 import com.intellij.codeInspection.*
 import com.intellij.openapi.project.*
 import com.intellij.psi.*
-import com.intellij.util.*
 import csense.idea.kotlin.test.bll.*
 import org.jetbrains.kotlin.idea.util.application.*
 import org.jetbrains.kotlin.psi.*
@@ -30,21 +29,14 @@ class AddTestMethodQuickFix(
             endElement: PsiElement
     ) {
         val fnc = startElement as? KtNamedFunction ?: return
-        val code = fnc.computeMostViableSimpleTestData()
-
         val safeTestName = testName.safeFunctionName()
-        val ktPsiFactory = KtPsiFactory(project)
-        val testMethod = ktPsiFactory.createFunction(
-                """@Test
-                   fun $safeTestName(){
-                       //TODO make me.
-                       ${code.joinToString("\n")}
-                   }
-                """.trimMargin())
+
+        val ktPsiFactory: KtPsiFactory = KtPsiFactory(project)
+        val code = fnc.computeMostViableSimpleTestData(safeTestName, ktPsiFactory)
         project.executeWriteCommand("update test class") {
             try {
                 val body = whereToWrite.getOrCreateBody()
-                body.addBefore(testMethod, body.lastChild)
+                body.addBefore(code, body.lastChild)
             } catch (e: Throwable) {
                 TODO("Add error handling here")
             }

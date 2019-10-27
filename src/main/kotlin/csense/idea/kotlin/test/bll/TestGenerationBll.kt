@@ -8,34 +8,57 @@ import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 
 
-fun KtNamedFunction.computeMostViableSimpleTestData(): List<String> {
+fun KtNamedFunction.computeMostViableSimpleTestData(safeTestName: String, ktPsiFactory: KtPsiFactory): PsiElement {
+    val receiverTypeReference = receiverTypeReference
     val typeToGuessOpt: KtTypeReference? = if (receiverTypeReference != null && valueParameters.isEmpty()) {
         receiverTypeReference
     } else if (valueParameters.size == 1 && receiverTypeReference == null) {
         valueParameters.firstOrNull()?.typeReference
     } else {
-        return listOf()
+        if (receiverTypeReference != null && receiverTypeReference.text.isTypeProperlyAListType()) {
+            return ktPsiFactory.createObject(computeListTestCode(safeTestName))
+        }
+        return "".wrapInAsFunction(safeTestName, ktPsiFactory)
     }
-    return handleOuterType(typeToGuessOpt, isTopLevel, true)
+
+    val code = handleOuterType(typeToGuessOpt, isTopLevel, true, safeTestName)
+    return code.wrapInAsFunction(safeTestName, ktPsiFactory)
+
+}
+
+private fun String.wrapInAsFunction(safeTestName: String, ktPsiFactory: KtPsiFactory): KtNamedFunction {
+    return ktPsiFactory.createFunction("""
+        @Test
+        fun $safeTestName(){
+            //TODO make me.
+            $this
+        }
+        """.trimMargin())
 }
 
 
-fun KtProperty.computeMostViableSimpleTestData(): List<String> {
+fun KtProperty.computeMostViableSimpleTestData(safeTestName: String, ktPsiFactory: KtPsiFactory): PsiElement {
+    val receiverTypeReference = receiverTypeReference
     val typeToGuessOpt: KtTypeReference? = if (receiverTypeReference != null && valueParameters.isEmpty()) {
         receiverTypeReference
     } else if (valueParameters.size == 1 && receiverTypeReference == null) {
         valueParameters.firstOrNull()?.typeReference
     } else {
-        return listOf()
+        if (receiverTypeReference != null && receiverTypeReference.text.isTypeProperlyAListType()) {
+            return ktPsiFactory.createObject(computeListTestCode(safeTestName))
+        }
+        return "".wrapInAsFunction(safeTestName, ktPsiFactory)
     }
-    return handleOuterType(typeToGuessOpt, isTopLevel, false)
+    val code = handleOuterType(typeToGuessOpt, isTopLevel, false, safeTestName)
+    return code.wrapInAsFunction(safeTestName, ktPsiFactory)
 }
 
 private fun KtNamedDeclaration.handleOuterType(
         typeToGuessOpt: KtTypeReference?,
         topLevel: Boolean,
-        generateInvocation: Boolean): List<String> {
-    val typeToGuess = typeToGuessOpt ?: return listOf()
+        generateInvocation: Boolean,
+        safeTestName: String): String {
+    val typeToGuess = typeToGuessOpt ?: return ""
     val nameOfType = typeToGuess.text
     val isKnown = when (nameOfType) {
 
@@ -89,8 +112,14 @@ private fun KtNamedDeclaration.handleOuterType(
     }
     if (isKnown != null) {
         return convertListToRealCode(isKnown, this, topLevel, generateInvocation)
+    }//run though all classes and create that as "cases".
+    //create code for each edition of the enum
+
+    if (nameOfType.isTypeProperlyAListType()) {
+        return computeListTestCode(safeTestName)
     }
-    val realElement = typeToGuess.resolveToRealElement() ?: return listOf()
+
+    val realElement = typeToGuess.resolveToRealElement() ?: return ""
     when (realElement) {
         is KtClass -> when {
             realElement.isEnum() -> {
@@ -105,7 +134,22 @@ private fun KtNamedDeclaration.handleOuterType(
         }
     }
 
-    return listOf()
+    return ""
+}
+
+fun String.isTypeProperlyAListType(): Boolean {
+    return when {
+        startsWith("Array<") -> {
+            true
+        }
+        startsWith("MutableList<") || startsWith("List<") -> {
+            true
+        }
+        startsWith("Set<") || startsWith("MutableSet<") -> {
+            true
+        }
+        else -> false
+    }
 }
 
 fun convertListToRealCode(
@@ -113,10 +157,10 @@ fun convertListToRealCode(
         fnc: KtNamedDeclaration,
         topLevel: Boolean,
         generateInvocation: Boolean
-): List<String> {
+): String {
     val invocation = generateInvocation.map("()", "")
     val nameOfFnc = fnc.name ?: ""
-    return if (fnc.isExtensionDeclaration()) {
+    val result = if (fnc.isExtensionDeclaration()) {
         isKnown.map { "$it.$nameOfFnc$invocation" }
     } else if (topLevel) {
         //can only be a function.. we do not look at 0 arg things..
@@ -130,6 +174,7 @@ fun convertListToRealCode(
             listOf("val clz = ${containingClass?.name}()") + isKnown.map { "clz.$it$invocation" }
         }
     }
+    return result.joinToString("\n")
 }
 
 fun KtTypeReference.resolveToRealElement(): PsiElement? {
@@ -150,7 +195,7 @@ fun String.safeFunctionName(): String {
             .replace(".", "")
 }
 
-fun String.safeDecapitizedFunctionName():String{
+fun String.safeDecapitizedFunctionName(): String {
     return decapitalize().safeFunctionName()
 }
 

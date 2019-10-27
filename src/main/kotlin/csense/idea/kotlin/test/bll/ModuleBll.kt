@@ -16,10 +16,25 @@ import org.jetbrains.kotlin.psi.psiUtil.*
 
 fun PsiDirectory.findTestFile(containingFile: KtFile): KtFile? {
     val fileName = containingFile.virtualFile.nameWithoutExtension
-    val searchingForNames = listOf(fileName)
+    val possibleFileNames = fileName.computeTestFileNames()
     return files.find {
-        it.name.startsWithAny(searchingForNames)
+        it.name.startsWithAny(possibleFileNames, ignoreCase = true)
     } as? KtFile
+}
+
+/**
+ * Regular tests names
+ * @receiver String
+ * @return List<String>
+ */
+fun String.computeTestFileNames(): List<String> {
+    return listOf(
+            this,
+            this + "Test",
+            this + "KtTest",
+            this + "KtTests",
+            this + "Tests"
+    )
 }
 
 fun KtFile.haveTestOfMethod(fnNames: List<String>, orgFile: KtFile, orgClass: KtClassOrObject?): Boolean {
@@ -27,11 +42,11 @@ fun KtFile.haveTestOfMethod(fnNames: List<String>, orgFile: KtFile, orgClass: Kt
         it.isPublic
     }
     return when {
-        publicClasses == 1 -> {
+        publicClasses == 1 || publicClasses == 0 -> { //eg if there are only extensions there will be no public classes.
             haveTestSingleClassOfMethodName(fnNames) || haveTestSingleClassObjectOfMethodName(fnNames)
         }
         publicClasses > 1 -> {
-            haveTestMultipleClassOfMethodName(fnNames, orgClass)
+            haveTestMultipleClassOfMethodName(fnNames, orgClass, orgFile.virtualFile.nameWithoutExtension)
         }
         else -> {
             false
@@ -39,20 +54,22 @@ fun KtFile.haveTestOfMethod(fnNames: List<String>, orgFile: KtFile, orgClass: Kt
     }
 }
 
-fun KtFile.findMostSuitableTestClass(forClass: KtClassOrObject?): KtClassOrObject? {
+fun KtFile.findMostSuitableTestClass(forClass: KtClassOrObject?, fileName: String): KtClassOrObject? {
     return findDescendantOfType<KtClassOrObject>() {
         forClass?.name?.let { ourClass ->
-            it.name?.startsWith(ourClass)
-        } ?: false
+            it.name?.startsWith(ourClass, true)
+        }
+                ?: it.name?.startsWith(fileName, true)
+                ?: false
     }
 }
 
 fun KtFile.haveTestMultipleClassOfMethodName(
         fnNames: List<String>,
-//        publicClassNames: List<String>,
-        orgClass: KtClassOrObject?
+        orgClass: KtClassOrObject?,
+        fileName: String
 ): Boolean {
-    val validClass = findMostSuitableTestClass(orgClass) ?: return false
+    val validClass = findMostSuitableTestClass(orgClass, fileName) ?: return false
 
     return fnNames.any {
         val functionNamesToFind = it.computeTestNames()
@@ -96,15 +113,19 @@ fun KtFile.shouldIgnore(): Boolean {
 
 fun Module.findPackageDir(containingFile: KtFile): PsiDirectory? {
     val packageName = containingFile.packageFqName.asString()
-    val sourceRoot = sourceRoots.find {
-        it.name == "kotlin"
-    } ?: return null
-    val psiDirectory = sourceRoot.toPsiDirectory(project) ?: return null
+    val psiDirectory = findKotlinRootDir() ?: return null
     return if (packageName == "") {
         psiDirectory
     } else {
         psiDirectory.findPackage(packageName)
     }
+}
+
+fun Module.findKotlinRootDir(): PsiDirectory? {
+    val sourceRoot = sourceRoots.find {
+        it.name == "kotlin"
+    } ?: return null
+    return sourceRoot.toPsiDirectory(project) ?: return null
 }
 
 fun PsiElement.isInTestModule(): Boolean {

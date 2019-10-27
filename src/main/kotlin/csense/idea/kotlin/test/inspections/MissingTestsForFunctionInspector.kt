@@ -2,6 +2,8 @@ package csense.idea.kotlin.test.inspections
 
 import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
+import com.intellij.openapi.module.*
+import com.intellij.psi.*
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.quickfixes.*
 import org.jetbrains.kotlin.idea.inspections.*
@@ -59,6 +61,14 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
 
                 val testFile = resultingDirectory?.findTestFile(ourFunction.containingKtFile)
 
+                if (testFile == null) {
+                    //offer to create the file in the dir.
+                    holder.registerProblem(ourFunction.nameIdentifier ?: ourFunction,
+                            "There are no test file",
+                            CreateTestFileQuickFix(testModule, resultingDirectory,
+                                    ourFunction.containingKtFile))
+                }
+
                 if (testFile == null && !ourFunction.isTopLevel) {
                     return@namedFunctionVisitor //skip class / obj functions if no test file is found
                 }
@@ -69,8 +79,17 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
                         ourFunction.containingClassOrObject
                 ) == true
                 if (!haveTestOfMethod) {
-                    val testClass = testFile?.findMostSuitableTestClass(ourFunction.containingClassOrObject)
-                    val fixes = createQuickFixesForFunction(testClass, ourFunction)
+                    //TODO use file name if containg is null / empty.
+                    val testClass = testFile?.findMostSuitableTestClass(
+                            ourFunction.containingClassOrObject,
+                            ourFunction.containingKtFile.virtualFile.nameWithoutExtension)
+                    val fixes = createQuickFixesForFunction(
+                            testClass,
+                            ourFunction,
+                            resultingDirectory,
+                            testModule,
+                            testFile
+                    )
                     holder.registerProblem(ourFunction.nameIdentifier ?: ourFunction,
                             "You have properly not tested this method",
                             *fixes)
@@ -83,13 +102,29 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
     }
 
 
-    fun createQuickFixesForFunction(testClass: KtClassOrObject?, ourFunction: KtNamedFunction): Array<LocalQuickFix> {
-        val ktClassOrObject = testClass ?: return arrayOf()
+    fun createQuickFixesForFunction(
+            testClass: KtClassOrObject?,
+            ourFunction: KtNamedFunction,
+            resultingDir: PsiDirectory?,
+            testModule: Module,
+            testFile: KtFile?
+    ): Array<LocalQuickFix> {
+        if (testFile == null) {
+            return arrayOf(CreateTestFileQuickFix(testModule, resultingDir, ourFunction.containingKtFile))
+        }
+        if (testClass == null) {
+            return arrayOf(
+                    CreateTestClassQuickFix(
+                            ourFunction.containingClassOrObject?.name
+                                    ?: ourFunction.containingKtFile.virtualFile.nameWithoutExtension,
+                            testFile))
+        }
+
         val testName = ourFunction.computeMostPreciseName()
         return arrayOf(AddTestMethodQuickFix(
                 ourFunction,
                 testName,
-                ktClassOrObject
+                testClass
         ))
     }
 

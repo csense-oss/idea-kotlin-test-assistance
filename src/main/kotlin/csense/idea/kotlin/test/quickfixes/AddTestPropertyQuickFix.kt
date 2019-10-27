@@ -31,19 +31,13 @@ class AddTestPropertyQuickFix(
     ) {
         val prop = startElement as KtProperty
         val safeName = testName.safeFunctionName()
-        val code = prop.computeMostViableSimpleTestData()
         val ktPsiFactory = KtPsiFactory(project)
-        val testMethod = ktPsiFactory.createFunction(
-                """@Test
-                   fun $safeName(){
-                       //TODO make me
-                       ${code.joinToString("\n")}
-                   }
-                """.trimMargin())
+        val code = prop.computeMostViableSimpleTestData(safeName, ktPsiFactory)
+
         project.executeWriteCommand("update test class") {
             try {
                 val body = whereToWrite.getOrCreateBody()
-                body.addBefore(testMethod, body.lastChild)
+                body.addBefore(code, body.lastChild)
             } catch (e: Throwable) {
                 TODO("Add error handling here")
             }

@@ -4,7 +4,7 @@ import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
 import com.intellij.psi.*
 import csense.idea.kotlin.test.bll.*
-import csense.kotlin.logger.*
+import csense.idea.kotlin.test.quickfixes.*
 import org.jetbrains.kotlin.asJava.*
 import org.jetbrains.kotlin.idea.inspections.*
 import org.jetbrains.kotlin.lexer.*
@@ -69,20 +69,34 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
             val resultingDirectory = testModule.findPackageDir(ourClass.containingKtFile)
             val testFile = resultingDirectory?.findTestFile(ourClass.containingKtFile)
 
-            //TODO search for class refs in testfile ??? hmm especially since we can have multiple classes in each file.
             if (testFile != null) {
-                return@classOrObjectVisitor //there are tests for this class so just skip this.
+                val haveTestClass = testFile.findMostSuitableTestClass(
+                        ourClass,
+                        ourClass.containingKtFile.virtualFile.nameWithoutExtension)
+                if (haveTestClass != null) {
+                    return@classOrObjectVisitor
+                } else {
+                    holder.registerProblem(ourClass.nameIdentifier ?: ourClass,
+                            "You have properly not tested this class",
+                            CreateTestClassQuickFix(
+                                    testFile.virtualFile.nameWithoutExtension,
+                                    testFile))
+                }
+            } else {
+                holder.registerProblem(ourClass.nameIdentifier ?: ourClass,
+                        "You have properly not tested this class",
+                        CreateTestFileQuickFix(
+                                testModule,
+                                resultingDirectory,
+                                ourClass.containingKtFile
+                        ))
             }
-
-
-            holder.registerProblem(ourClass.nameIdentifier ?: ourClass,
-                    "You have properly not tested this class")
-
         }
     }
 }
 
-fun KtClassOrObject.getAllFunctions(): List<KtNamedFunction> = collectDescendantsOfType()
+fun KtClassOrObject.getAllFunctions(): List<KtNamedFunction> =
+        collectDescendantsOfType()
 
 fun PsiNamedElement.isInterfaceClass(): Boolean = when (this) {
     is KtClass -> isInterface()

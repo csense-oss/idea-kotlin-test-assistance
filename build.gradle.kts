@@ -6,13 +6,13 @@ plugins {
 }
 
 group = "csense-idea"
-version = "0.100"
+version = "0.200"
 
 
 intellij {
     updateSinceUntilBuild = false //Disables updating since-build attribute in plugin.xml
     setPlugins("kotlin", "java")
-    version = "2019.2.3"
+    version = "2019.2.+"
 }
 
 
@@ -21,13 +21,15 @@ repositories {
 }
 
 dependencies {
-    compile("csense.kotlin:csense-kotlin-jvm:0.0.21")
+    implementation("csense.kotlin:csense-kotlin-jvm:0.0.21")
 }
 
 tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml") {
     changeNotes("""
       <ul>
-        <li>Now allows for multiple classes in a single file & then also in the test file. (test class should start with same name as real class, eg prepend "test").</li>
+        <li>Fixed previously introduced bug, where extensions files would be marked untested, sorry :)</li>
+        <li>More quickfixes</li>
+        <li>Generates different test code for list & array types </li>
       </ul>
       """)
 }
