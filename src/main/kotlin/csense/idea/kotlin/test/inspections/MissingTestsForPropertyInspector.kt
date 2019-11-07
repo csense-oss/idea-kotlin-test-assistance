@@ -2,6 +2,8 @@ package csense.idea.kotlin.test.inspections
 
 import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
+import com.intellij.openapi.module.Module
+import com.intellij.psi.PsiDirectory
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.quickfixes.*
 import org.jetbrains.kotlin.idea.inspections.*
@@ -50,6 +52,7 @@ class MissingTestsForPropertyInspector : AbstractKotlinInspection() {
                     prop.isInTestModule()) {
                 return@propertyVisitor//ignore private & protected  methods / non kt files.
             }
+            val safeContainingClasss = prop.containingClassOrObject?.namedClassOrObject()
 
             if (prop.hasConstantCustomGetterOnly()) {
                 return@propertyVisitor
@@ -69,13 +72,13 @@ class MissingTestsForPropertyInspector : AbstractKotlinInspection() {
                 val haveTestOfMethod = testFile?.haveTestOfMethod(
                         namesToLookAt,
                         prop.containingKtFile,
-                        prop.containingClassOrObject
+                        safeContainingClasss
                 ) == true
                 if (!haveTestOfMethod) {
                     val testClass = testFile?.findMostSuitableTestClass(
-                            prop.containingClassOrObject,
+                            safeContainingClasss,
                             prop.containingKtFile.virtualFile.nameWithoutExtension)
-                    val fixes = createQuickFixesForFunction(testClass, prop)
+                    val fixes = createQuickFixesForFunction(testClass, prop, resultingDirectory, testModule, testFile)
                     holder.registerProblem(prop.nameIdentifier ?: prop,
                             "You have properly not tested this property (getter/setter)",
                             *fixes)
@@ -87,16 +90,31 @@ class MissingTestsForPropertyInspector : AbstractKotlinInspection() {
         }
     }
 
-    fun createQuickFixesForFunction(testClass: KtClassOrObject?, ourProp: KtProperty): Array<LocalQuickFix> {
-        val ktClassOrObject = testClass ?: return arrayOf()
+    fun createQuickFixesForFunction(
+            testClass: KtClassOrObject?,
+            ourProp: KtProperty,
+            resultingDir: PsiDirectory?,
+            testModule: Module,
+            testFile: KtFile?
+    ): Array<LocalQuickFix> {
+        if (testFile == null) {
+            return arrayOf(CreateTestFileQuickFix(testModule, resultingDir, ourProp.containingKtFile))
+        }
+        if (testClass == null) {
+            return arrayOf(
+                    CreateTestClassQuickFix(
+                            ourProp.containingClassOrObject?.namedClassOrObject()?.name
+                                    ?: ourProp.containingKtFile.virtualFile.nameWithoutExtension,
+                            testFile))
+        }
+
         val testName = ourProp.computeMostPreciseName()
         return arrayOf(AddTestPropertyQuickFix(
                 ourProp,
                 testName,
-                ktClassOrObject
+                testClass
         ))
     }
-
 
 }
 

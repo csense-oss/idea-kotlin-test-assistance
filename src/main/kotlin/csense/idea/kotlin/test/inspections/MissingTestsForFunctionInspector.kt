@@ -53,8 +53,10 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
                     ourFunction.isInTestModule()) {
                 return@namedFunctionVisitor//ignore private & protected  methods / non kt files.
             }
-            val timeInMs = measureTimeMillis {
 
+
+            val timeInMs = measureTimeMillis {
+                val safeContainingClass = ourFunction.containingClassOrObject?.namedClassOrObject()
                 //step 2 is to find the test file in the test root
                 val testModule = ourFunction.findTestModule() ?: return@namedFunctionVisitor
                 val resultingDirectory = testModule.findPackageDir(ourFunction.containingKtFile)
@@ -76,12 +78,12 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
                 val haveTestOfMethod = testFile?.haveTestOfMethod(
                         namesToLookAt,
                         ourFunction.containingKtFile,
-                        ourFunction.containingClassOrObject
+                        safeContainingClass
                 ) == true
                 if (!haveTestOfMethod) {
                     //TODO use file name if containg is null / empty.
                     val testClass = testFile?.findMostSuitableTestClass(
-                            ourFunction.containingClassOrObject,
+                            safeContainingClass,
                             ourFunction.containingKtFile.virtualFile.nameWithoutExtension)
                     val fixes = createQuickFixesForFunction(
                             testClass,
@@ -115,7 +117,7 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
         if (testClass == null) {
             return arrayOf(
                     CreateTestClassQuickFix(
-                            ourFunction.containingClassOrObject?.name
+                            ourFunction.containingClassOrObject?.namedClassOrObject()?.name
                                     ?: ourFunction.containingKtFile.virtualFile.nameWithoutExtension,
                             testFile))
         }

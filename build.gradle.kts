@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "csense-idea"
-version = "0.200"
+version = "0.220"
 
 
 intellij {
@@ -27,9 +27,7 @@ dependencies {
 tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml") {
     changeNotes("""
       <ul>
-        <li>Fixed previously introduced bug, where extensions files would be marked untested, sorry :)</li>
-        <li>More quickfixes</li>
-        <li>Generates different test code for list & array types </li>
+        <li>Fix deprecated method usage.</li>
       </ul>
       """)
 }

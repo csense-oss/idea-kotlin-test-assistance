@@ -5,6 +5,7 @@ import com.intellij.codeInspection.*
 import com.intellij.psi.*
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.quickfixes.*
+import csense.kotlin.extensions.map
 import org.jetbrains.kotlin.asJava.*
 import org.jetbrains.kotlin.idea.inspections.*
 import org.jetbrains.kotlin.lexer.*
@@ -43,7 +44,8 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
 
     override fun buildVisitor(holder: ProblemsHolder,
                               isOnTheFly: Boolean): KtVisitorVoid {
-        return classOrObjectVisitor { ourClass ->
+        return classOrObjectVisitor { outerClass ->
+            val ourClass = outerClass.namedClassOrObject()
             if (ourClass.isInTestModule() ||
                     ourClass.hasModifier(KtTokens.COMPANION_KEYWORD) ||
                     ourClass.containingKtFile.shouldIgnore()) {
@@ -79,7 +81,7 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
                     holder.registerProblem(ourClass.nameIdentifier ?: ourClass,
                             "You have properly not tested this class",
                             CreateTestClassQuickFix(
-                                    testFile.virtualFile.nameWithoutExtension,
+                                    ourClass.name + "Test",
                                     testFile))
                 }
             } else {

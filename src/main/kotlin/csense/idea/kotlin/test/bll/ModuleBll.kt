@@ -2,16 +2,26 @@
 
 package csense.idea.kotlin.test.bll
 
-import com.intellij.openapi.module.*
-import com.intellij.psi.*
-import csense.kotlin.extensions.*
-import csense.kotlin.extensions.primitives.*
-import org.jetbrains.kotlin.idea.*
-import org.jetbrains.kotlin.idea.refactoring.*
-import org.jetbrains.kotlin.idea.util.*
-import org.jetbrains.kotlin.idea.util.projectStructure.*
-import org.jetbrains.kotlin.psi.*
-import org.jetbrains.kotlin.psi.psiUtil.*
+import com.intellij.openapi.module.Module
+import com.intellij.openapi.module.ModuleUtil
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiDirectory
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiManager
+import csense.kotlin.extensions.isNotNull
+import csense.kotlin.extensions.primitives.endsWithAny
+import csense.kotlin.extensions.primitives.startsWithAny
+import org.jetbrains.kotlin.idea.KotlinLanguage
+import org.jetbrains.kotlin.idea.util.projectStructure.allModules
+import org.jetbrains.kotlin.idea.util.sourceRoots
+import org.jetbrains.kotlin.psi.KtClassOrObject
+import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
+import org.jetbrains.kotlin.psi.psiUtil.findDescendantOfType
+import org.jetbrains.kotlin.psi.psiUtil.forEachDescendantOfType
+import org.jetbrains.kotlin.psi.psiUtil.isPublic
 
 
 fun PsiDirectory.findTestFile(containingFile: KtFile): KtFile? {
@@ -211,3 +221,5 @@ fun String.computeTestNames(): Set<String> {
             "test" + this.capitalize(),
             this + "test")
 }
+
+fun VirtualFile.toPsiDirectory(project: Project): PsiDirectory? = PsiManager.getInstance(project).findDirectory(this)

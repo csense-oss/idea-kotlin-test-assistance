@@ -13,13 +13,13 @@ class CreateTestClassQuickFix(val className: String, testFile: KtFile) : LocalQu
     }
 
     override fun getText(): String {
-        return "Create test class $className"
+        return "Create test class ${className}Test"
     }
 
     override fun invoke(project: Project, file: PsiFile, startElement: PsiElement, endElement: PsiElement) {
         val testFile = startElement as? KtFile ?: return
         val factory = KtPsiFactory(project)
-        val clz = factory.createClass("class $className{\n}")
+        val clz = factory.createClass("class ${className}Test{\n}")
         testFile.add(clz)
     }
 

@@ -1,13 +1,14 @@
 package csense.idea.kotlin.test.quickfixes
 
-import com.intellij.codeInspection.*
-import com.intellij.openapi.module.*
-import com.intellij.openapi.project.*
-import com.intellij.psi.*
-import csense.idea.kotlin.test.bll.*
-import csense.kotlin.extensions.*
-import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.psi.*
+import com.intellij.codeInspection.LocalQuickFix
+import com.intellij.codeInspection.ProblemDescriptor
+import com.intellij.openapi.module.Module
+import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiDirectory
+import csense.idea.kotlin.test.bll.findKotlinRootDir
+import csense.kotlin.extensions.tryAndLog
+import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtPsiFactory
 
 
 class CreateTestFileQuickFix(

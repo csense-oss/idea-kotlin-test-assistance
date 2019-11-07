@@ -2,6 +2,7 @@ package csense.idea.kotlin.test.bll
 
 import com.intellij.psi.*
 import csense.kotlin.extensions.*
+import csense.kotlin.extensions.primitives.startsWithAny
 import org.jetbrains.kotlin.idea.references.*
 import org.jetbrains.kotlin.js.resolve.diagnostics.*
 import org.jetbrains.kotlin.psi.*
@@ -137,20 +138,8 @@ private fun KtNamedDeclaration.handleOuterType(
     return ""
 }
 
-fun String.isTypeProperlyAListType(): Boolean {
-    return when {
-        startsWith("Array<") -> {
-            true
-        }
-        startsWith("MutableList<") || startsWith("List<") -> {
-            true
-        }
-        startsWith("Set<") || startsWith("MutableSet<") -> {
-            true
-        }
-        else -> false
-    }
-}
+fun String.isTypeProperlyAListType(): Boolean =
+        startsWithAny("Array<", "Iterable<", "MutableList<", "List<", "Set<", "MutableSet<")
 
 fun convertListToRealCode(
         isKnown: List<String>,
