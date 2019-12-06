@@ -2,6 +2,7 @@
 
 package csense.idea.kotlin.test.bll
 
+import com.intellij.ide.macro.ModuleNameMacro
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
@@ -10,9 +11,12 @@ import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import csense.kotlin.extensions.isNotNull
+import csense.kotlin.extensions.primitives.doesNotEndsWith
 import csense.kotlin.extensions.primitives.endsWithAny
 import csense.kotlin.extensions.primitives.startsWithAny
 import org.jetbrains.kotlin.idea.KotlinLanguage
+import org.jetbrains.kotlin.idea.caches.project.implementedModules
+import org.jetbrains.kotlin.idea.caches.project.testSourceInfo
 import org.jetbrains.kotlin.idea.util.projectStructure.allModules
 import org.jetbrains.kotlin.idea.util.sourceRoots
 import org.jetbrains.kotlin.psi.KtClassOrObject
@@ -155,10 +159,16 @@ fun PsiElement.findTestModule(): Module? {
     }
 
     val searchingFor = module.name
-            .replace("_main", "_test")
-            .replace(".main", ".test")
     return this.project.allModules().find { mod: Module ->
-        searchingFor == mod.name
+        val modName = mod.name
+        //if the name starts with teh same and
+        //  &&mod.testSourceInfo() != null
+        if (modName.doesNotEndsWith("test", true)  || modName.length < 4) {
+            return@find false
+        }
+        val withoutTestIndex = modName.length - 4
+        val withoutTest = modName.substring(0, withoutTestIndex)
+        searchingFor.startsWith(withoutTest)
     }
 }
 
