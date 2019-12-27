@@ -6,6 +6,7 @@ import com.intellij.ide.macro.ModuleNameMacro
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiElement
@@ -17,6 +18,7 @@ import csense.kotlin.extensions.primitives.startsWithAny
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.idea.caches.project.implementedModules
 import org.jetbrains.kotlin.idea.caches.project.testSourceInfo
+import org.jetbrains.kotlin.idea.util.module
 import org.jetbrains.kotlin.idea.util.projectStructure.allModules
 import org.jetbrains.kotlin.idea.util.sourceRoots
 import org.jetbrains.kotlin.psi.KtClassOrObject
@@ -158,14 +160,19 @@ fun PsiElement.findTestModule(): Module? {
         return null
     }
 
+
     val searchingFor = module.name
     return this.project.allModules().find { mod: Module ->
         val modName = mod.name
         //if the name starts with teh same and
         //  &&mod.testSourceInfo() != null
-        if (modName.doesNotEndsWith("test", true)  || modName.length < 4) {
+        if (modName.doesNotEndsWith("test", true) || modName.length < 4) {
             return@find false
         }
+        if (!mod.rootManager.isDependsOn(module)) {
+            return@find false
+        }
+
         val withoutTestIndex = modName.length - 4
         val withoutTest = modName.substring(0, withoutTestIndex)
         searchingFor.startsWith(withoutTest)

@@ -1,5 +1,5 @@
 plugins {
-    id("org.jetbrains.intellij") version "0.4.14"
+    id("org.jetbrains.intellij") version "0.4.15"
     kotlin("jvm") version "1.3.50"
     java
     id("org.owasp.dependencycheck") version "5.1.0"
@@ -24,8 +24,8 @@ repositories {
 }
 
 dependencies {
-    implementation("csense.kotlin:csense-kotlin-jvm:0.0.26")
-    implementation("csense.kotlin:csense-kotlin-annotations-jvm:0.0.11")
+    implementation("csense.kotlin:csense-kotlin-jvm:0.0.27")
+    implementation("csense.kotlin:csense-kotlin-annotations-jvm:0.0.14")
     implementation("csense.kotlin:csense-kotlin-ds-jvm:0.0.24")
 }
 
