@@ -52,6 +52,13 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
                 return@classOrObjectVisitor//skip companion objects / non kt files.
             }
 
+            //if it is Anonymous
+            if (ourClass.isAnonymous()) {
+                holder.registerProblem(
+                        ourClass.children.firstOrNull() ?: ourClass,
+                        "Anonymous classes are hard to test, consider making this a class of itself")
+                return@classOrObjectVisitor
+            }
 
             //skip classes /things with no functions
             val functions = ourClass.getAllFunctions()
@@ -96,6 +103,8 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
         }
     }
 }
+
+fun KtClassOrObject.isAnonymous(): Boolean = name == null
 
 fun KtClassOrObject.getAllFunctions(): List<KtNamedFunction> =
         collectDescendantsOfType()

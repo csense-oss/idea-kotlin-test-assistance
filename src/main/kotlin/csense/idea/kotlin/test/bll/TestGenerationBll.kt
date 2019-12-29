@@ -17,13 +17,13 @@ fun KtNamedFunction.computeMostViableSimpleTestData(safeTestName: String, ktPsiF
         valueParameters.firstOrNull()?.typeReference
     } else {
         if (receiverTypeReference != null && receiverTypeReference.text.isTypeProperlyAListType()) {
-            return ktPsiFactory.createObject(computeListTestCode(safeTestName))
+            return ktPsiFactory.createObject(computeListTestCode(safeTestName.capitalize()))
         }
-        return "".wrapInAsFunction(safeTestName, ktPsiFactory)
+        return "".wrapInAsFunction(safeTestName.decapitalize(), ktPsiFactory)
     }
 
     val code = handleOuterType(typeToGuessOpt, isTopLevel, true, safeTestName)
-    return code.wrapInAsFunction(safeTestName, ktPsiFactory)
+    return code.wrapInAsFunction(safeTestName.decapitalize(), ktPsiFactory)
 
 }
 
@@ -182,6 +182,8 @@ fun String.safeFunctionName(): String {
             .replace("<", "")
             .replace(">", "")
             .replace(".", "")
+            .replace(",", "")
+            .replace(" ", "")
 }
 
 fun String.safeDecapitizedFunctionName(): String {

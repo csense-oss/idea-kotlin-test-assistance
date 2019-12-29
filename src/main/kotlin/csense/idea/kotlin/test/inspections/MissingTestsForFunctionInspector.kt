@@ -56,12 +56,21 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
 
 
             val timeInMs = measureTimeMillis {
-                val safeContainingClass = ourFunction.containingClassOrObject?.namedClassOrObject()
+                val parent = ourFunction.containingClassOrObject?.namedClassOrObject()
+
+                //skip anonymous classes' function(s)
+                if (parent != null && parent.isAnonymous()) {
+                    return@namedFunctionVisitor
+                }
+
+                val containingKtFile = ourFunction.containingKtFile
+
+                val safeContainingClass = parent
                 //step 2 is to find the test file in the test root
                 val testModule = ourFunction.findTestModule() ?: return@namedFunctionVisitor
-                val resultingDirectory = testModule.findPackageDir(ourFunction.containingKtFile)
+                val resultingDirectory = testModule.findPackageDir(containingKtFile)
 
-                val testFile = resultingDirectory?.findTestFile(ourFunction.containingKtFile)
+                val testFile = resultingDirectory?.findTestFile(containingKtFile)
 
                 if (testFile == null) {
                     //offer to create the file in the dir.
