@@ -2,7 +2,6 @@
 
 package csense.idea.kotlin.test.bll
 
-import com.intellij.ide.macro.ModuleNameMacro
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
@@ -11,14 +10,12 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
+import csense.kotlin.extensions.collections.typed.contains
 import csense.kotlin.extensions.isNotNull
 import csense.kotlin.extensions.primitives.doesNotEndsWith
 import csense.kotlin.extensions.primitives.endsWithAny
 import csense.kotlin.extensions.primitives.startsWithAny
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.kotlin.idea.caches.project.implementedModules
-import org.jetbrains.kotlin.idea.caches.project.testSourceInfo
-import org.jetbrains.kotlin.idea.util.module
 import org.jetbrains.kotlin.idea.util.projectStructure.allModules
 import org.jetbrains.kotlin.idea.util.sourceRoots
 import org.jetbrains.kotlin.psi.KtClassOrObject
@@ -71,7 +68,7 @@ fun KtFile.haveTestOfMethod(fnNames: List<String>, orgFile: KtFile, orgClass: Kt
 }
 
 fun KtFile.findMostSuitableTestClass(forClass: KtClassOrObject?, fileName: String): KtClassOrObject? {
-    return findDescendantOfType<KtClassOrObject>() {
+    return findDescendantOfType { it: KtClassOrObject ->
         forClass?.name?.let { ourClass ->
             it.name?.startsWith(ourClass, true)
         }
@@ -90,11 +87,7 @@ fun KtFile.haveTestMultipleClassOfMethodName(
     return fnNames.any {
         val functionNamesToFind = it.computeTestNames()
         val didFindFunction = validClass.haveTestOfMethodNames(functionNamesToFind)
-        if (didFindFunction) {
-            true
-        } else {
-            validClass.haveTestOfClassObjectOfMethodName(functionNamesToFind)
-        }
+        return@any didFindFunction || validClass.haveTestOfClassObjectOfMethodName(functionNamesToFind)
     }
 }
 
@@ -105,8 +98,9 @@ fun KtFile.haveTestSingleClassOfMethodName(fnNames: List<String>): Boolean = fnN
 
 fun PsiElement.haveTestOfMethodNames(functionNamesToFind: Set<String>): Boolean =
         haveDescendantOfType<KtNamedFunction> {
+            val name = it.name ?: return@haveDescendantOfType false
             it.containingClassOrObject?.isTopLevel() == true &&
-                    functionNamesToFind.contains(it.name)
+                    functionNamesToFind.contains(name, true)
         }
 
 
@@ -115,11 +109,12 @@ fun KtFile.haveTestSingleClassObjectOfMethodName(fnNames: List<String>): Boolean
     haveTestOfClassObjectOfMethodName(functionNamesToFind)
 }
 
-fun PsiElement.haveTestOfClassObjectOfMethodName(functionNamesToFind: Set<String>): Boolean =
-        haveDescendantOfType<KtClassOrObject> {
-            it.name?.decapitalize()?.startsWithAny(
-                    functionNamesToFind) ?: false
-        }
+fun PsiElement.haveTestOfClassObjectOfMethodName(functionNamesToFind: Set<String>): Boolean {
+    return haveDescendantOfType<KtClassOrObject> {
+        val name = it.name?.decapitalize() ?: return@haveDescendantOfType false
+        functionNamesToFind.contains(name, true)
+    }
+}
 
 
 fun KtFile.shouldIgnore(): Boolean {
@@ -213,7 +208,7 @@ inline fun KtNamedFunction.haveOverloads(containerClassOrObject: KtClassOrObject
 }
 
 inline fun <reified T : PsiElement> PsiElement.countDescendantOfType(
-        noinline predicate: (T) -> Boolean
+        crossinline predicate: (T) -> Boolean
 ): Int {
     var counter = 0
     forEachDescendantOfType<T> {

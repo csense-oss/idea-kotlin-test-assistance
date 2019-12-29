@@ -5,6 +5,7 @@ import com.intellij.codeInspection.ProblemDescriptor
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDirectory
+import com.intellij.util.IncorrectOperationException
 import csense.idea.kotlin.test.bll.findKotlinRootDir
 import csense.kotlin.extensions.tryAndLog
 import org.jetbrains.kotlin.psi.KtFile
@@ -35,9 +36,14 @@ class CreateTestFileQuickFix(
             val root = testModule.findKotlinRootDir() ?: return
             root.createPackageFolders(packageName) ?: return
         }
-        val file = dir.createFile(fileName)
-        file.add(newClass.createPackageDirective(ktFile.packageFqName))
-        file.add(newClass.createClass("class $className{\n}"))
+        try {
+            val file = dir.createFile(fileName)
+            file.add(newClass.createAnnotationEntry("@file:Suppress(\"unused\")"))
+            file.add(newClass.createPackageDirective(ktFile.packageFqName))
+            file.add(newClass.createClass("class $className{\n}"))
+        } catch (e: IncorrectOperationException) {
+            throw e //TODO make me.
+        }
         return
     }
 
@@ -47,7 +53,12 @@ fun PsiDirectory.createPackageFolders(packageName: String): PsiDirectory? = tryA
     val names = packageName.split('.')
     var dir = this
     names.forEach {
-        dir = dir.findSubdirectory(it) ?: dir.createSubdirectory(it)
+        try {
+            dir = dir.findSubdirectory(it) ?: dir.createSubdirectory(it)
+        } catch (e: IncorrectOperationException) {
+            //TODO handle.
+            return@tryAndLog null
+        }
     }
     return dir
 }

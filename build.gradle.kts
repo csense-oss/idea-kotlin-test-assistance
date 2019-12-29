@@ -24,7 +24,7 @@ repositories {
 }
 
 dependencies {
-    implementation("csense.kotlin:csense-kotlin-jvm:0.0.27")
+    implementation("csense.kotlin:csense-kotlin-jvm:0.0.29")
     implementation("csense.kotlin:csense-kotlin-annotations-jvm:0.0.14")
     implementation("csense.kotlin:csense-kotlin-ds-jvm:0.0.24")
 }
@@ -36,6 +36,8 @@ tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml
         <li>Now works with common modules (better test naming strategy for module resolving)</li>
         <li>More fixes(eg names, more overloads ect)</li>
         <li>Handles anonymous objects much better now</li>
+        <li>Now uses classes rather than objects (objects fails for junit)</li>
+        <li>When creating test files, adds suppression to unused (so idea will not mark test methods / classes as unused)</li>
       </ul>
       <br/>
       Nb, will improve the naming schemes later (as overloaded extensions on complex types creates very long weird names).

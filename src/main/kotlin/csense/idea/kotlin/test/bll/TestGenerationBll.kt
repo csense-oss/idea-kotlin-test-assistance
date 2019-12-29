@@ -17,7 +17,7 @@ fun KtNamedFunction.computeMostViableSimpleTestData(safeTestName: String, ktPsiF
         valueParameters.firstOrNull()?.typeReference
     } else {
         if (receiverTypeReference != null && receiverTypeReference.text.isTypeProperlyAListType()) {
-            return ktPsiFactory.createObject(computeListTestCode(safeTestName.capitalize()))
+            return ktPsiFactory.createClass(computeListTestCode(safeTestName.capitalize()))
         }
         return "".wrapInAsFunction(safeTestName.decapitalize(), ktPsiFactory)
     }
@@ -46,7 +46,7 @@ fun KtProperty.computeMostViableSimpleTestData(safeTestName: String, ktPsiFactor
         valueParameters.firstOrNull()?.typeReference
     } else {
         if (receiverTypeReference != null && receiverTypeReference.text.isTypeProperlyAListType()) {
-            return ktPsiFactory.createObject(computeListTestCode(safeTestName))
+            return ktPsiFactory.createClass(computeListTestCode(safeTestName))
         }
         return "".wrapInAsFunction(safeTestName, ktPsiFactory)
     }

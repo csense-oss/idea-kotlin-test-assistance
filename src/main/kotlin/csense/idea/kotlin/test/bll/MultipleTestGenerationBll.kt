@@ -2,7 +2,7 @@ package csense.idea.kotlin.test.bll
 
 fun computeListTestCode(testName: String): String {
     return """
-        object $testName {
+        class $testName {
             @Test
             fun empty(){
                 //TODO test empty condition here.
