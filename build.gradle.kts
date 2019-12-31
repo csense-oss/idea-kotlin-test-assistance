@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "csense-idea"
-version = "0.230"
+version = "0.231"
 
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
@@ -37,6 +37,7 @@ tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml
         <li>More fixes(eg names, more overloads ect)</li>
         <li>Handles anonymous objects much better now</li>
         <li>Now uses classes rather than objects (objects fails for junit)</li>
+        <li>Sealed and abstract classes are not marked</li>
         <li>When creating test files, adds suppression to unused (so idea will not mark test methods / classes as unused)</li>
       </ul>
       <br/>

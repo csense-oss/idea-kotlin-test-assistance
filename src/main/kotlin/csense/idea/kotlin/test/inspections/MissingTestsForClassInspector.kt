@@ -46,9 +46,12 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
                               isOnTheFly: Boolean): KtVisitorVoid {
         return classOrObjectVisitor { outerClass ->
             val ourClass = outerClass.namedClassOrObject()
+            val ktFile = ourClass.containingKtFile
             if (ourClass.isInTestModule() ||
-                    ourClass.hasModifier(KtTokens.COMPANION_KEYWORD) ||
-                    ourClass.containingKtFile.shouldIgnore()) {
+                    ourClass.isCompanion() ||
+                    ourClass.isAbstract() ||
+                    ourClass.isSealed() ||
+                    ktFile.shouldIgnore()) {
                 return@classOrObjectVisitor//skip companion objects / non kt files.
             }
 
@@ -75,13 +78,13 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
 
             //step 2 is to find the test file in the test root
             val testModule = ourClass.findTestModule() ?: return@classOrObjectVisitor
-            val resultingDirectory = testModule.findPackageDir(ourClass.containingKtFile)
-            val testFile = resultingDirectory?.findTestFile(ourClass.containingKtFile)
+            val resultingDirectory = testModule.findPackageDir(ktFile)
+            val testFile = resultingDirectory?.findTestFile(ktFile)
 
             if (testFile != null) {
                 val haveTestClass = testFile.findMostSuitableTestClass(
                         ourClass,
-                        ourClass.containingKtFile.virtualFile.nameWithoutExtension)
+                        ktFile.virtualFile.nameWithoutExtension)
                 if (haveTestClass != null) {
                     return@classOrObjectVisitor
                 } else {
@@ -97,12 +100,16 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
                         CreateTestFileQuickFix(
                                 testModule,
                                 resultingDirectory,
-                                ourClass.containingKtFile
+                                ktFile
                         ))
             }
         }
     }
 }
+
+fun KtClassOrObject.isSealed(): Boolean = hasModifier(KtTokens.SEALED_KEYWORD)
+fun KtClassOrObject.isAbstract(): Boolean = hasModifier(KtTokens.ABSTRACT_KEYWORD)
+fun KtClassOrObject.isCompanion(): Boolean = hasModifier(KtTokens.COMPANION_KEYWORD)
 
 fun KtClassOrObject.isAnonymous(): Boolean = name == null
 
