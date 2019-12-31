@@ -109,7 +109,6 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
 
 fun KtClassOrObject.isSealed(): Boolean = hasModifier(KtTokens.SEALED_KEYWORD)
 fun KtClassOrObject.isAbstract(): Boolean = hasModifier(KtTokens.ABSTRACT_KEYWORD)
-fun KtClassOrObject.isCompanion(): Boolean = hasModifier(KtTokens.COMPANION_KEYWORD)
 
 fun KtClassOrObject.isAnonymous(): Boolean = name == null
 

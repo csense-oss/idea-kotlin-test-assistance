@@ -2,11 +2,11 @@ plugins {
     id("org.jetbrains.intellij") version "0.4.15"
     kotlin("jvm") version "1.3.61"
     java
-    id("org.owasp.dependencycheck") version "5.1.0"
+    id("org.owasp.dependencycheck") version "5.2.4"
 }
 
 group = "csense-idea"
-version = "0.231"
+version = "0.232"
 
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
