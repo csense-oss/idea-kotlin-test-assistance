@@ -4,6 +4,8 @@ import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
 import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiDirectory
+import csense.idea.base.bll.kotlin.hasConstantCustomGetterOnly
+import csense.idea.base.bll.kotlin.hasCustomSetterGetter
 import csense.idea.base.bll.registerProblemSafe
 import csense.idea.base.module.findPackageDir
 import csense.idea.base.module.findTestModule
@@ -133,39 +135,6 @@ fun KtProperty.computeViableNames(): List<String> {
     return listOf(safeName) + extensionNames
 }
 
-
-fun KtProperty.hasCustomSetterGetter(): Boolean {
-    return getter != null || setter != null
-}
-
-fun KtProperty.hasConstantCustomGetterOnly(): Boolean {
-    return getter != null && setter == null && isGetterConstant()
-}
-
-fun KtProperty.isGetterConstant(): Boolean {
-    val exp = getterBody ?: return false
-    return exp.isConstant()
-}
-
-fun KtExpression.isConstant(): Boolean = when (this) {
-    is KtConstantExpression -> {
-        true
-    }
-    is KtStringTemplateExpression -> {
-        this.isConstant()
-    }
-    is KtBlockExpression -> {
-        children.size == 1 && (children[0] as KtExpression).isConstant()
-    }
-    is KtReturnExpression -> {
-        children.size == 1 && (children[0] as KtExpression).isConstant()
-    }
-    else -> false
-}
-
-fun KtStringTemplateExpression.isConstant(): Boolean =
-        isPlainWithEscapes()
-
 fun KtProperty.computeMostPreciseName(): String {
     return if (isExtensionDeclaration()) {
         val extensionName = receiverTypeReference?.text?.safeDecapitizedFunctionName()
@@ -175,8 +144,3 @@ fun KtProperty.computeMostPreciseName(): String {
     }
 }
 
-
-val KtProperty.getterBody: KtExpression?
-    get() {
-        return getter?.getChildOfType()
-    }
