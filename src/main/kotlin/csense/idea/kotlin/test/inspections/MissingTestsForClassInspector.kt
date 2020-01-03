@@ -3,9 +3,16 @@ package csense.idea.kotlin.test.inspections
 import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
 import com.intellij.psi.*
+import csense.idea.base.bll.kotlin.*
+import csense.idea.base.bll.psi.isInterfaceClass
+import csense.idea.base.bll.registerProblemSafe
+import csense.idea.base.module.findPackageDir
+import csense.idea.base.module.findTestModule
+import csense.idea.base.module.isInTestModule
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.quickfixes.*
-import csense.kotlin.extensions.map
+import csense.kotlin.extensions.toUnit
+import csense.kotlin.extensions.tryAndLog
 import org.jetbrains.kotlin.asJava.*
 import org.jetbrains.kotlin.idea.inspections.*
 import org.jetbrains.kotlin.lexer.*
@@ -57,7 +64,8 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
 
             //if it is Anonymous
             if (ourClass.isAnonymous()) {
-                holder.registerProblem(
+
+                holder.registerProblemSafe(
                         ourClass.children.firstOrNull() ?: ourClass,
                         "Anonymous classes are hard to test, consider making this a class of itself")
                 return@classOrObjectVisitor
@@ -88,14 +96,14 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
                 if (haveTestClass != null) {
                     return@classOrObjectVisitor
                 } else {
-                    holder.registerProblem(ourClass.nameIdentifier ?: ourClass,
+                    holder.registerProblemSafe(ourClass.nameIdentifier ?: ourClass,
                             "You have properly not tested this class",
                             CreateTestClassQuickFix(
                                     ourClass.name + "Test",
                                     testFile))
                 }
             } else {
-                holder.registerProblem(ourClass.nameIdentifier ?: ourClass,
+                holder.registerProblemSafe(ourClass.nameIdentifier ?: ourClass,
                         "You have properly not tested this class",
                         CreateTestFileQuickFix(
                                 testModule,
@@ -105,18 +113,4 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
             }
         }
     }
-}
-
-fun KtClassOrObject.isSealed(): Boolean = hasModifier(KtTokens.SEALED_KEYWORD)
-fun KtClassOrObject.isAbstract(): Boolean = hasModifier(KtTokens.ABSTRACT_KEYWORD)
-
-fun KtClassOrObject.isAnonymous(): Boolean = name == null
-
-fun KtClassOrObject.getAllFunctions(): List<KtNamedFunction> =
-        collectDescendantsOfType()
-
-fun PsiNamedElement.isInterfaceClass(): Boolean = when (this) {
-    is KtClass -> isInterface()
-    is PsiClass -> isInterface
-    else -> false
 }

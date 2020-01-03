@@ -4,6 +4,12 @@ import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
 import com.intellij.openapi.module.*
 import com.intellij.psi.*
+import csense.idea.base.bll.kotlin.haveOverloads
+import csense.idea.base.bll.kotlin.isAnonymous
+import csense.idea.base.bll.registerProblemSafe
+import csense.idea.base.module.findPackageDir
+import csense.idea.base.module.findTestModule
+import csense.idea.base.module.isInTestModule
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.quickfixes.*
 import org.jetbrains.kotlin.idea.inspections.*
@@ -74,7 +80,7 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
 
                 if (testFile == null) {
                     //offer to create the file in the dir.
-                    holder.registerProblem(ourFunction.nameIdentifier ?: ourFunction,
+                    holder.registerProblemSafe(ourFunction.nameIdentifier ?: ourFunction,
                             "There are no test file",
                             CreateTestFileQuickFix(testModule, resultingDirectory,
                                     ourFunction.containingKtFile))
@@ -101,7 +107,7 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
                             testModule,
                             testFile
                     )
-                    holder.registerProblem(ourFunction.nameIdentifier ?: ourFunction,
+                    holder.registerProblemSafe(ourFunction.nameIdentifier ?: ourFunction,
                             "You have properly not tested this method",
                             *fixes)
                 }

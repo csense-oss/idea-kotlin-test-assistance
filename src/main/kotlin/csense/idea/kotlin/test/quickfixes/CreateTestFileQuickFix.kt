@@ -6,8 +6,8 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDirectory
 import com.intellij.util.IncorrectOperationException
-import csense.idea.kotlin.test.bll.findKotlinRootDir
-import csense.kotlin.extensions.tryAndLog
+import csense.idea.base.module.createPackageFolders
+import csense.idea.base.module.findKotlinRootDir
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtPsiFactory
 
@@ -47,18 +47,4 @@ class CreateTestFileQuickFix(
         return
     }
 
-}
-
-fun PsiDirectory.createPackageFolders(packageName: String): PsiDirectory? = tryAndLog {
-    val names = packageName.split('.')
-    var dir = this
-    names.forEach {
-        try {
-            dir = dir.findSubdirectory(it) ?: dir.createSubdirectory(it)
-        } catch (e: IncorrectOperationException) {
-            //TODO handle.
-            return@tryAndLog null
-        }
-    }
-    return dir
 }

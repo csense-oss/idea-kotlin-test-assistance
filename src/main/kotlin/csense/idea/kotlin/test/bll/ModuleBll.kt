@@ -2,28 +2,19 @@
 
 package csense.idea.kotlin.test.bll
 
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleUtil
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.rootManager
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiManager
+import csense.idea.base.bll.psi.countDescendantOfType
+import csense.idea.base.bll.psi.haveDescendantOfType
 import csense.kotlin.extensions.collections.typed.contains
-import csense.kotlin.extensions.isNotNull
-import csense.kotlin.extensions.primitives.doesNotEndsWith
 import csense.kotlin.extensions.primitives.endsWithAny
 import csense.kotlin.extensions.primitives.startsWithAny
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.kotlin.idea.util.projectStructure.allModules
-import org.jetbrains.kotlin.idea.util.sourceRoots
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.findDescendantOfType
-import org.jetbrains.kotlin.psi.psiUtil.forEachDescendantOfType
 import org.jetbrains.kotlin.psi.psiUtil.isPublic
 
 
@@ -116,117 +107,11 @@ fun PsiElement.haveTestOfClassObjectOfMethodName(functionNamesToFind: Set<String
     }
 }
 
-
+//TODO "is kotlin file" ?
 fun KtFile.shouldIgnore(): Boolean {
     return this.fileType != KotlinLanguage.INSTANCE.associatedFileType ||
             !this.virtualFilePath.endsWithAny(".kt", ".kts")
 }
-
-fun Module.findPackageDir(containingFile: KtFile): PsiDirectory? {
-    val packageName = containingFile.packageFqName.asString()
-    val psiDirectory = findKotlinRootDir() ?: return null
-    return if (packageName == "") {
-        psiDirectory
-    } else {
-        psiDirectory.findPackage(packageName)
-    }
-}
-
-fun Module.findKotlinRootDir(): PsiDirectory? {
-    val sourceRoot = sourceRoots.find {
-        it.name == "kotlin"
-    } ?: return null
-    return sourceRoot.toPsiDirectory(project) ?: return null
-}
-
-fun PsiElement.isInTestModule(): Boolean {
-    val module = ModuleUtil.findModuleForPsiElement(this) ?: return false
-    return module.isTestModule()
-}
-
-fun Module.isTestModule(): Boolean {
-    return name.endsWith("_test") || name.endsWith(".test")
-}
-
-fun PsiElement.findTestModule(): Module? {
-    val module = ModuleUtil.findModuleForPsiElement(this) ?: return null
-    //step 2 is to find the test file in the test root
-    if (module.isTestModule()) {
-        return null
-    }
-
-
-    val searchingFor = module.name
-    return this.project.allModules().find { mod: Module ->
-        val modName = mod.name
-        //if the name starts with teh same and
-        //  &&mod.testSourceInfo() != null
-        if (modName.doesNotEndsWith("test", true) || modName.length < 4) {
-            return@find false
-        }
-        if (!mod.rootManager.isDependsOn(module)) {
-            return@find false
-        }
-
-        val withoutTestIndex = modName.length - 4
-        val withoutTest = modName.substring(0, withoutTestIndex)
-        searchingFor.startsWith(withoutTest)
-    }
-}
-
-fun PsiDirectory.findPackage(packageName: String): PsiDirectory? {
-    if (packageName.isEmpty()) {
-        return null
-    }
-    val folders = packageName.split(".")
-    var resultingDirectory = this
-    folders.forEach {
-        resultingDirectory = resultingDirectory.findSubdirectory(it) ?: return null
-    }
-    return resultingDirectory
-}
-
-
-inline fun KtNamedFunction.haveOverloads(): Boolean {
-    //use class or object if there, or if we are toplevel use the file to search.
-    containingClassOrObject?.let {
-        return haveOverloads(it)
-    }
-    return haveOverloads(containingKtFile)
-}
-
-inline fun KtNamedFunction.haveOverloads(containingFile: KtFile): Boolean {
-    return containingFile.countDescendantOfType<KtNamedFunction> {
-        it.isTopLevel && it.name == this.name
-    } > 1
-}
-
-inline fun KtNamedFunction.haveOverloads(containerClassOrObject: KtClassOrObject): Boolean {
-    return containerClassOrObject.countDescendantOfType<KtNamedFunction> {
-        it.name == this.name
-    } > 1
-}
-
-inline fun <reified T : PsiElement> PsiElement.countDescendantOfType(
-        crossinline predicate: (T) -> Boolean
-): Int {
-    var counter = 0
-    forEachDescendantOfType<T> {
-        if (predicate(it)) {
-            counter += 1
-        }
-    }
-    return counter
-}
-
-inline fun <reified T : PsiElement> PsiElement.haveDescendantOfType(
-        noinline predicate: (T) -> Boolean): Boolean {
-    val found = findDescendantOfType<T> {
-        it != this && predicate(it)
-    }
-    return found != this && found.isNotNull
-}
-
 fun String.computeTestNames(): Set<String> {
     return setOf(
             this,
@@ -234,4 +119,3 @@ fun String.computeTestNames(): Set<String> {
             this + "test")
 }
 
-fun VirtualFile.toPsiDirectory(project: Project): PsiDirectory? = PsiManager.getInstance(project).findDirectory(this)

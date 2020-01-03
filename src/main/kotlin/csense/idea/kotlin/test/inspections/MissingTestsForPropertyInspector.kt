@@ -4,6 +4,10 @@ import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
 import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiDirectory
+import csense.idea.base.bll.registerProblemSafe
+import csense.idea.base.module.findPackageDir
+import csense.idea.base.module.findTestModule
+import csense.idea.base.module.isInTestModule
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.quickfixes.*
 import org.jetbrains.kotlin.idea.inspections.*
@@ -79,7 +83,7 @@ class MissingTestsForPropertyInspector : AbstractKotlinInspection() {
                             safeContainingClasss,
                             prop.containingKtFile.virtualFile.nameWithoutExtension)
                     val fixes = createQuickFixesForFunction(testClass, prop, resultingDirectory, testModule, testFile)
-                    holder.registerProblem(prop.nameIdentifier ?: prop,
+                    holder.registerProblemSafe(prop.nameIdentifier ?: prop,
                             "You have properly not tested this property (getter/setter)",
                             *fixes)
                 }
@@ -174,5 +178,5 @@ fun KtProperty.computeMostPreciseName(): String {
 
 val KtProperty.getterBody: KtExpression?
     get() {
-        return getter?.getChildOfType<KtExpression>()
+        return getter?.getChildOfType()
     }

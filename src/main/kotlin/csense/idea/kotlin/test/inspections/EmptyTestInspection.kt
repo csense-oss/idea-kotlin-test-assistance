@@ -3,6 +3,9 @@ package csense.idea.kotlin.test.inspections
 import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
 import com.intellij.psi.*
+import csense.idea.base.bll.kotlin.isBodyEmpty
+import csense.idea.base.bll.registerProblemSafe
+import csense.idea.base.module.isInTestModule
 import csense.idea.kotlin.test.bll.*
 import org.jetbrains.kotlin.idea.inspections.*
 import org.jetbrains.kotlin.psi.*
@@ -54,7 +57,7 @@ class EmptyTestInspection : AbstractKotlinInspection() {
             //we are a test with no ignore.
             //are we empty ?
             if (ourFnc.isBodyEmpty()) {
-                holder.registerProblem(
+                holder.registerProblemSafe(
                         ourFnc.nameIdentifier ?: ourFnc,
                         "Empty test, mark it as ignore."
                 )
@@ -62,10 +65,6 @@ class EmptyTestInspection : AbstractKotlinInspection() {
 
         }
     }
-}
-
-fun KtNamedFunction.isBodyEmpty(): Boolean {
-    return bodyExpression?.children?.isEmpty() ?: true
 }
 
 fun KtNamedFunction.isAnnotatedTest(): Boolean =

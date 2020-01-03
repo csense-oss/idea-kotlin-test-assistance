@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "csense-idea"
-version = "0.232"
+version = "0.240"
 
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
@@ -19,14 +19,15 @@ intellij {
 
 repositories {
     jcenter()
-    //until ds is in jcenter
     maven(url = "https://dl.bintray.com/csense-oss/maven")
+    maven(url = "https://dl.bintray.com/csense-oss/idea")
 }
 
 dependencies {
     implementation("csense.kotlin:csense-kotlin-jvm:0.0.29")
     implementation("csense.kotlin:csense-kotlin-annotations-jvm:0.0.14")
     implementation("csense.kotlin:csense-kotlin-ds-jvm:0.0.24")
+    implementation("csense.idea.base:csense-idea-base:0.0.5")
 }
 
 
