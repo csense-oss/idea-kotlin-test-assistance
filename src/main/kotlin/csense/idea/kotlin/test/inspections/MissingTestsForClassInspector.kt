@@ -64,9 +64,9 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
 
             //if it is Anonymous
             if (ourClass.isAnonymous()) {
-
                 holder.registerProblemSafe(
-                        ourClass.children.firstOrNull() ?: ourClass,
+                        //we want to avoid marking the whole ann class..
+                        ourClass.findDescendantOfType<KtSuperTypeList>() ?: ourClass,
                         "Anonymous classes are hard to test, consider making this a class of itself")
                 return@classOrObjectVisitor
             }
