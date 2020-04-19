@@ -21,10 +21,10 @@ fun KtNamedFunction.computeMostViableSimpleTestData(safeTestName: String, ktPsiF
         }
         return "".wrapInAsFunction(safeTestName.decapitalize(), ktPsiFactory)
     }
-
+    
     val code = handleOuterType(typeToGuessOpt, isTopLevel, true, safeTestName)
     return code.wrapInAsFunction(safeTestName.decapitalize(), ktPsiFactory)
-
+    
 }
 
 private fun String.wrapInAsFunction(safeTestName: String, ktPsiFactory: KtPsiFactory): KtNamedFunction {
@@ -62,64 +62,64 @@ private fun KtNamedDeclaration.handleOuterType(
     val typeToGuess = typeToGuessOpt ?: return ""
     val nameOfType = typeToGuess.text
     val isKnown = when (nameOfType) {
-
+        
         //region lists
         "List<Byte>" -> byteListExamples
         "List<Short>" -> shortListExamples
         "List<Int>" -> intListExamples
         "List<Long>" -> longListExamples
-
+        
         "List<Float>" -> floatListExamples
         "List<Double>" -> doubleListExamples
-
+        
         "List<Boolean>" -> booleanListExamples
-
+        
         "List<Char>" -> charListExamples
         "List<String>" -> stringListExamples
         //endregion
-
+        
         //region array
         "Array<Byte>" -> byteArrayExamples
         "Array<Short>" -> shortArrayExamples
         "Array<Int>" -> intArrayExamples
         "Array<Long>" -> longArrayExamples
-
+        
         "Array<Float>" -> floatArrayExamples
         "Array<Double>" -> doubleArrayExamples
-
+        
         "Array<Boolean>" -> booleanArrayExamples
-
+        
         "Array<Char>" -> charArrayExamples
         "Array<String>" -> stringArrayExamples
         //endregion
-
+        
         //region primitives
         "Byte" -> byteExamples
         "Short" -> shortExamples
         "Int" -> intExamples
         "Long" -> longExamples
-
+        
         "Float" -> floatExamples
         "Double" -> doubleExamples
-
+        
         "Char" -> charExamples
-
+        
         "Boolean" -> boolExamples
-
+        
         "String" -> stringExamples
         //endregion
-
+        
         else -> null
     }
     if (isKnown != null) {
         return convertListToRealCode(isKnown, this, topLevel, generateInvocation)
     }//run though all classes and create that as "cases".
     //create code for each edition of the enum
-
+    
     if (nameOfType.isTypeProperlyAListType()) {
         return computeListTestCode(safeTestName)
     }
-
+    
     val realElement = typeToGuess.resolveToRealElement() ?: return ""
     when (realElement) {
         is KtClass -> when {
@@ -129,12 +129,12 @@ private fun KtNamedDeclaration.handleOuterType(
                 //create code for each edition of the enum
             }
             realElement.isSealed() -> {
-
+                
                 //run though all classes and create that as "cases".
             }
         }
     }
-
+    
     return ""
 }
 
@@ -184,6 +184,7 @@ fun String.safeFunctionName(): String {
             .replace(".", "")
             .replace(",", "")
             .replace(" ", "")
+            .replace("*", "")
 }
 
 fun String.safeDecapitizedFunctionName(): String {

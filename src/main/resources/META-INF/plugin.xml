@@ -22,6 +22,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <inspectionToolProvider
                 implementation="csense.idea.kotlin.test.inspections.InspectionsProvider"/>
+        <toolWindow id="Method / class coverage Tool window" icon="/icons/toolwindow.png" anchor="right" factoryClass="csense.idea.kotlin.test.toolwindow.CoverageToolWindowFactory"/>
     </extensions>
 
     <actions>
