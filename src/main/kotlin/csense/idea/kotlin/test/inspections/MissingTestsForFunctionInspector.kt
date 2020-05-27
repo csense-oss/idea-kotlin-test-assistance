@@ -2,22 +2,10 @@ package csense.idea.kotlin.test.inspections
 
 import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
-import com.intellij.openapi.module.*
-import com.intellij.psi.*
-import csense.idea.base.bll.kotlin.haveOverloads
-import csense.idea.base.bll.kotlin.isAnonymous
-import csense.idea.base.bll.registerProblemSafe
-import csense.idea.base.module.findPackageDir
-import csense.idea.base.module.findTestModule
-import csense.idea.base.module.isInTestModule
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.bll.analyzers.*
-import csense.idea.kotlin.test.quickfixes.*
 import org.jetbrains.kotlin.idea.inspections.*
-import org.jetbrains.kotlin.idea.refactoring.*
 import org.jetbrains.kotlin.psi.*
-import org.jetbrains.kotlin.psi.psiUtil.*
-import kotlin.system.*
 
 class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
     

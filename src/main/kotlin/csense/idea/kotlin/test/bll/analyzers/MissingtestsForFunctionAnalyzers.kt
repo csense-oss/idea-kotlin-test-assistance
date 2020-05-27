@@ -6,15 +6,14 @@ import com.intellij.psi.*
 import csense.idea.base.bll.kotlin.*
 import csense.idea.base.module.*
 import csense.idea.kotlin.test.bll.*
-import csense.idea.kotlin.test.inspections.*
 import csense.idea.kotlin.test.quickfixes.*
 import org.jetbrains.kotlin.idea.refactoring.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 import kotlin.system.*
 
-object MissingtestsForFunctionAnalyzers : Analyzer<KtNamedFunction> {
-    override fun analyze(ourFunction: KtNamedFunction): AnalyzerResult {
+object MissingtestsForFunctionAnalyzers {
+    fun analyze(ourFunction: KtNamedFunction): AnalyzerResult {
         val errors = mutableListOf<AnalyzerError>()
         if (ourFunction.isPrivate() ||
                 ourFunction.isProtected() ||

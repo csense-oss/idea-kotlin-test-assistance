@@ -1,20 +1,19 @@
 package csense.idea.kotlin.test.bll.analyzers
 
 import com.intellij.codeInspection.*
-import com.intellij.openapi.module.Module
+import com.intellij.openapi.module.*
 import com.intellij.psi.*
 import csense.idea.base.bll.kotlin.*
 import csense.idea.base.module.*
 import csense.idea.kotlin.test.bll.*
-import csense.idea.kotlin.test.inspections.*
 import csense.idea.kotlin.test.quickfixes.*
 import org.jetbrains.kotlin.idea.refactoring.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 import kotlin.system.*
 
-object MissingTestsForPropertyAnalyzer : Analyzer<KtProperty> {
-    override fun analyze(item: KtProperty): AnalyzerResult {
+object MissingTestsForPropertyAnalyzer {
+    fun analyze(item: KtProperty): AnalyzerResult {
         val errors = mutableListOf<AnalyzerError>()
         if (item.isPrivate() ||
                 item.isProtected() ||

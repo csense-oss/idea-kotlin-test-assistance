@@ -3,7 +3,6 @@ package csense.idea.kotlin.test.quickfixes
 import com.intellij.codeInspection.*
 import com.intellij.openapi.project.*
 import com.intellij.psi.*
-import com.intellij.util.*
 import csense.idea.kotlin.test.bll.*
 import org.jetbrains.kotlin.idea.util.application.*
 import org.jetbrains.kotlin.psi.*

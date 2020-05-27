@@ -2,14 +2,12 @@ package csense.idea.kotlin.test.inspections
 
 import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
-import com.intellij.psi.*
-import csense.idea.base.bll.kotlin.isBodyEmpty
-import csense.idea.base.bll.registerProblemSafe
-import csense.idea.base.module.isInTestModule
+import csense.idea.base.bll.*
+import csense.idea.base.bll.kotlin.*
+import csense.idea.base.module.*
 import csense.idea.kotlin.test.bll.*
 import org.jetbrains.kotlin.idea.inspections.*
 import org.jetbrains.kotlin.psi.*
-import org.jetbrains.kotlin.psi.psiUtil.*
 
 /*
 - mark empty tests (functions marked with @Test but with no real code in them)

@@ -9,9 +9,9 @@ import org.jetbrains.kotlin.asJava.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 
-object MissingTestsForClassAnalyzer : Analyzer<KtClassOrObject> {
+object MissingTestsForClassAnalyzer {
     
-    override fun analyze(outerClass: KtClassOrObject): AnalyzerResult {
+    fun analyze(outerClass: KtClassOrObject): AnalyzerResult {
         val errors = mutableListOf<AnalyzerError>()
         val ourClass = outerClass.namedClassOrObject()
         val ktFile = ourClass.containingKtFile
