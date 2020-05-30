@@ -36,8 +36,10 @@ class MissingTestsForPropertyInspector : AbstractKotlinInspection() {
         return true
     }
     
-    override fun buildVisitor(holder: ProblemsHolder,
-                              isOnTheFly: Boolean): KtVisitorVoid {
+    override fun buildVisitor(
+            holder: ProblemsHolder,
+            isOnTheFly: Boolean
+    ): KtVisitorVoid {
         return propertyVisitor { prop ->
             val result = MissingTestsForPropertyAnalyzer.analyze(prop)
             result.errors.forEach {

@@ -13,29 +13,25 @@ import org.jetbrains.kotlin.psi.KtPsiFactory
 
 
 class CreateTestFileQuickFix(
-        val testModule: Module,
+        val rootDir: PsiDirectory,
         val resultingDirectory: PsiDirectory?,
-        val ktFile: KtFile) : LocalQuickFix {
-
+        val ktFile: KtFile
+) : LocalQuickFix {
+    
     override fun getName(): String {
         return "Add test file"
     }
-
+    
     override fun getFamilyName(): String {
         return this::class.java.simpleName
     }
-
+    
     override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
         val newClass = KtPsiFactory(project)
         val packageName = ktFile.packageFqName.asString()
         val className = ktFile.virtualFile.nameWithoutExtension + "Test"
         val fileName = "$className.kt"
-        val dir: PsiDirectory = if (resultingDirectory != null) {
-            resultingDirectory
-        } else {
-            val root = testModule.findKotlinRootDir() ?: return
-            root.createPackageFolders(packageName) ?: return
-        }
+        val dir: PsiDirectory = resultingDirectory ?: (rootDir.createPackageFolders(packageName) ?: return)
         try {
             val file = dir.createFile(fileName)
             file.add(newClass.createAnnotationEntry("@file:Suppress(\"unused\")"))
@@ -46,5 +42,5 @@ class CreateTestFileQuickFix(
         }
         return
     }
-
+    
 }

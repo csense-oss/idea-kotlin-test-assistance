@@ -37,8 +37,10 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
         return true
     }
     
-    override fun buildVisitor(holder: ProblemsHolder,
-                              isOnTheFly: Boolean): KtVisitorVoid {
+    override fun buildVisitor(
+            holder: ProblemsHolder,
+            isOnTheFly: Boolean
+    ): KtVisitorVoid {
         return classOrObjectVisitor { outerClass ->
             val result = MissingTestsForClassAnalyzer.analyze(outerClass)
             result.errors.forEach {

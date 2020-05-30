@@ -1,10 +1,8 @@
 package csense.idea.kotlin.test.bll.analyzers
 
 import com.intellij.codeInspection.*
-import com.intellij.openapi.module.*
 import com.intellij.psi.*
 import csense.idea.base.bll.kotlin.*
-import csense.idea.base.module.*
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.quickfixes.*
 import org.jetbrains.kotlin.idea.refactoring.*
@@ -14,13 +12,14 @@ import kotlin.system.*
 
 object MissingTestsForPropertyAnalyzer {
     fun analyze(item: KtProperty): AnalyzerResult {
+        val containingKtFile = item.containingKtFile
         val errors = mutableListOf<AnalyzerError>()
         if (item.isPrivate() ||
                 item.isProtected() ||
                 item.isAbstract() ||
                 !item.hasCustomSetterGetter() ||
-                item.containingKtFile.shouldIgnore() ||
-                item.isInTestModule()) {
+                containingKtFile.shouldIgnore() ||
+                TestInformationCache.isFileInTestModule(containingKtFile)) {
             return AnalyzerResult.empty//ignore private & protected  methods / non kt files.
         }
         val safeContainingClasss = item.containingClassOrObject?.namedClassOrObject()
@@ -31,10 +30,11 @@ object MissingTestsForPropertyAnalyzer {
         val timeInMs = measureTimeMillis {
             
             //step 2 is to find the test file in the test root
-            val testModule = item.findTestModule() ?: return AnalyzerResult.empty
-            val resultingDirectory = testModule.findPackageDir(item.containingKtFile)
             
-            val testFile = resultingDirectory?.findTestFile(item.containingKtFile)
+            val testModule = TestInformationCache.lookupModuleTestSourceRoot(item, containingKtFile) ?: return AnalyzerResult.empty
+            val resultingDirectory = testModule.findPackageDir(containingKtFile)
+            
+            val testFile = resultingDirectory?.findTestFile(containingKtFile)
             
             if (testFile == null && !item.isTopLevel) {
                 return AnalyzerResult.empty //skip class / obj functions if no test file is found
@@ -66,11 +66,11 @@ object MissingTestsForPropertyAnalyzer {
             testClass: KtClassOrObject?,
             ourProp: KtProperty,
             resultingDir: PsiDirectory?,
-            testModule: Module,
+            testSourceRoot: PsiDirectory,
             testFile: KtFile?
     ): Array<LocalQuickFix> {
         if (testFile == null) {
-            return arrayOf(CreateTestFileQuickFix(testModule, resultingDir, ourProp.containingKtFile))
+            return arrayOf(CreateTestFileQuickFix(testSourceRoot, resultingDir, ourProp.containingKtFile))
         }
         if (testClass == null) {
             return arrayOf(

@@ -58,7 +58,8 @@ private fun KtNamedDeclaration.handleOuterType(
         typeToGuessOpt: KtTypeReference?,
         topLevel: Boolean,
         generateInvocation: Boolean,
-        safeTestName: String): String {
+        safeTestName: String
+): String {
     val typeToGuess = typeToGuessOpt ?: return ""
     val nameOfType = typeToGuess.text
     val isKnown = when (nameOfType) {
@@ -139,7 +140,7 @@ private fun KtNamedDeclaration.handleOuterType(
 }
 
 fun String.isTypeProperlyAListType(): Boolean =
-        startsWithAny("Array<", "Iterable<", "MutableList<", "List<", "Set<", "MutableSet<")
+        startsWithAny("Array<", "Iterable<", "MutableList<", "List<", "Set<", "MutableSet<", "Collection<", "Map<", "MutableMap<")
 
 fun convertListToRealCode(
         isKnown: List<String>,

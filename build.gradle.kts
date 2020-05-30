@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "csense-idea"
-version = "0.260"
+version = "0.270"
 
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
@@ -24,10 +24,10 @@ repositories {
 }
 
 dependencies {
-    implementation("csense.kotlin:csense-kotlin-jvm:0.0.34")
+    implementation("csense.kotlin:csense-kotlin-jvm:0.0.35")
     implementation("csense.kotlin:csense-kotlin-annotations-jvm:0.0.17")
     implementation("csense.kotlin:csense-kotlin-ds-jvm:0.0.24")
-    implementation("csense.idea.base:csense-idea-base:0.1.9")
+    implementation("csense.idea.base:csense-idea-base:0.1.10")
 }
 
 
@@ -35,6 +35,9 @@ tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml
     changeNotes("""
       <ul>
         <li>Added coverage tool window</li>
+        <li>Fixes for android studio</li>
+        <li>added more test generation</li>
+        <li>Performance for test inspections</li>
       </ul>
       """)
 }
@@ -47,7 +50,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions.freeCompilerArgs = listOf("-progressive")
 }
 
-tasks.withType<JavaCompile>{
+tasks.withType<JavaCompile> {
     targetCompatibility = "1.8"
     sourceCompatibility = "1.8"
 }

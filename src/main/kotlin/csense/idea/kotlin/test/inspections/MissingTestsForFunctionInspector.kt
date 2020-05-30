@@ -38,8 +38,10 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
     }
     
     
-    override fun buildVisitor(holder: ProblemsHolder,
-                              isOnTheFly: Boolean): KtVisitorVoid {
+    override fun buildVisitor(
+            holder: ProblemsHolder,
+            isOnTheFly: Boolean
+    ): KtVisitorVoid {
         return namedFunctionVisitor { ourFunction: KtNamedFunction ->
             val result = MissingtestsForFunctionAnalyzers.analyze(ourFunction)
             result.errors.forEach {

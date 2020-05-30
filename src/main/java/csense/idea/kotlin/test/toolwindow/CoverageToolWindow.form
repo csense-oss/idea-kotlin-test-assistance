@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="csense.idea.kotlin.test.toolwindow.CoverageToolWindow">
-  <grid id="27dc6" binding="content" layout-manager="GridLayoutManager" row-count="11" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="27dc6" binding="content" layout-manager="GridLayoutManager" row-count="13" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="20" left="20" bottom="20" right="20"/>
     <constraints>
-      <xy x="20" y="20" width="1063" height="413"/>
+      <xy x="20" y="20" width="1063" height="600"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -128,11 +128,9 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="19870" class="javax.swing.JTable" binding="missingClassesTable" default-binding="true">
+          <component id="b0e4e" class="javax.swing.JList" binding="missingClassesList">
             <constraints/>
-            <properties>
-              <font/>
-            </properties>
+            <properties/>
           </component>
         </children>
       </scrollpane>
@@ -143,10 +141,10 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="6131" class="javax.swing.JTable" default-binding="true">
+          <component id="a254d" class="javax.swing.JList" binding="missingFunctionsList">
             <constraints/>
             <properties>
-              <font/>
+              <model/>
             </properties>
           </component>
         </children>
@@ -156,6 +154,35 @@
           <grid row="10" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
         </constraints>
       </vspacer>
+      <scrollpane id="dd534">
+        <constraints>
+          <grid row="12" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="1bec0" class="javax.swing.JList" binding="missingPropertiesList">
+            <constraints/>
+            <properties>
+              <model/>
+            </properties>
+          </component>
+        </children>
+      </scrollpane>
+      <vspacer id="966b0">
+        <constraints>
+          <grid row="12" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+        </constraints>
+      </vspacer>
+      <component id="2293f" class="javax.swing.JLabel">
+        <constraints>
+          <grid row="11" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <labelFor value="530d3"/>
+          <text value="Missing Properties"/>
+        </properties>
+      </component>
     </children>
   </grid>
 </form>

@@ -1,25 +1,35 @@
 package csense.idea.kotlin.test.bll.analyzers
 
+import com.intellij.openapi.module.*
+import com.intellij.openapi.project.*
+import com.intellij.openapi.roots.*
+import com.intellij.openapi.vfs.*
+import com.intellij.psi.*
+import csense.idea.base.bll.*
 import csense.idea.base.bll.kotlin.*
 import csense.idea.base.bll.psi.*
 import csense.idea.base.module.*
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.quickfixes.*
+import csense.kotlin.extensions.primitives.*
 import org.jetbrains.kotlin.asJava.*
+import org.jetbrains.kotlin.idea.util.*
+import org.jetbrains.kotlin.idea.util.projectStructure.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 
 object MissingTestsForClassAnalyzer {
     
     fun analyze(outerClass: KtClassOrObject): AnalyzerResult {
+        
         val errors = mutableListOf<AnalyzerError>()
         val ourClass = outerClass.namedClassOrObject()
-        val ktFile = ourClass.containingKtFile
-        if (ourClass.isInTestModule() ||
+        val containingKtFile = ourClass.containingKtFile
+        if (TestInformationCache.isFileInTestModule(containingKtFile) ||
                 ourClass.isCompanion() ||
                 ourClass.isAbstract() ||
                 ourClass.isSealed() ||
-                ktFile.shouldIgnore()) {
+                containingKtFile.shouldIgnore()) {
             //skip companion objects / non kt files.
             return AnalyzerResult(errors)
         }
@@ -48,14 +58,16 @@ object MissingTestsForClassAnalyzer {
         }
         
         //step 2 is to find the test file in the test root
-        val testModule = ourClass.findTestModule() ?: return AnalyzerResult.empty
-        val resultingDirectory = testModule.findPackageDir(ktFile)
-        val testFile = resultingDirectory?.findTestFile(ktFile)
+        val testSourceRoot = TestInformationCache.lookupModuleTestSourceRoot(ourClass, containingKtFile)
+                ?: return AnalyzerResult.empty
+        
+        val resultingDirectory = testSourceRoot.findPackageDir(containingKtFile)
+        val testFile = resultingDirectory?.findTestFile(containingKtFile)
         
         if (testFile != null) {
             val haveTestClass = testFile.findMostSuitableTestClass(
                     ourClass,
-                    ktFile.virtualFile.nameWithoutExtension)
+                    containingKtFile.virtualFile.nameWithoutExtension)
             if (haveTestClass != null) {
                 return AnalyzerResult(errors)
             } else {
@@ -72,12 +84,81 @@ object MissingTestsForClassAnalyzer {
                     ?: ourClass,
                     "You have properly not tested this class",
                     arrayOf(CreateTestFileQuickFix(
-                            testModule,
+                            testSourceRoot,
                             resultingDirectory,
-                            ktFile
+                            containingKtFile
                     ))))
         }
         
         return AnalyzerResult(errors)
+    }
+}
+
+fun PsiElement.findMostPropableTestSourceRoot(): PsiDirectory? {
+    val module = ModuleUtil.findModuleForPsiElement(this) ?: return null
+    //step 2 is to find the test file in the test root
+    if (module.isTestModule()) {
+        return null
+    }
+    return module.findMostPropableTestSourceRootDir()
+}
+
+fun Module.findMostPropableTestSourceRootDir(): PsiDirectory? {
+    return (findMostPropableTestSourceRoot()
+            ?: findMostPropableTestModule()?.findMostPropableTestSourceRoot())?.toPsiDirectory(project)
+}
+
+fun Module.findMostPropableTestSourceRoot(): VirtualFile? {
+    //strategy for sourceRoot searching
+    val testSourceRoots = sourceRoots.filterTestSourceRoots(project)
+    return testSourceRoots.findMostPreferedTestSourceRootForKotlin()
+}
+
+/**
+ * Will first find the kotlin folder, then the java then if non matches, the first if any
+ * @receiver List<VirtualFile>
+ * @return VirtualFile?
+ */
+fun List<VirtualFile>.findMostPreferedTestSourceRootForKotlin(): VirtualFile? {
+    return firstOrNull {
+        it.name.equals("kotlin", true)
+    } ?: firstOrNull {
+        it.name.equals("java", true)
+    } ?: firstOrNull()
+}
+
+fun Array<VirtualFile>.filterTestSourceRoots(project: Project): List<VirtualFile> {
+    val inst = ProjectFileIndex.SERVICE.getInstance(project)
+    return filter {
+        inst.isInTestSourceContent(it)
+    }
+}
+
+fun Module.findMostPropableTestModule(): Module? {
+    val searchingFor = this.name
+    return this.project.allModules().find { mod: Module ->
+        val modName = mod.name
+        //if the name starts with the same and ends with test
+        if (modName.doesNotEndsWith("test", true) || modName.length < 4) {
+            return@find false
+        }
+        
+        if (!ModuleRootManager.getInstance(mod).isDependsOn(this)) {
+            return@find false
+        }
+        
+        val withoutTestIndex = modName.length - 4
+        val withoutTest = modName.substring(0, withoutTestIndex)
+        searchingFor.startsWith(withoutTest)
+    }
+}
+
+
+fun PsiDirectory.findPackageDir(file: KtFile): PsiDirectory? {
+    val packageName = file.packageFqName.asString()
+    return if (packageName == "") {
+        this
+    } else {
+        this.findPackage(packageName)
     }
 }

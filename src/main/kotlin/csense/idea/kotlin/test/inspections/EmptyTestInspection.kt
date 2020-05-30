@@ -43,8 +43,10 @@ class EmptyTestInspection : AbstractKotlinInspection() {
         return true
     }
 
-    override fun buildVisitor(holder: ProblemsHolder,
-                              isOnTheFly: Boolean): KtVisitorVoid {
+    override fun buildVisitor(
+            holder: ProblemsHolder,
+            isOnTheFly: Boolean
+    ): KtVisitorVoid {
         return namedFunctionVisitor { ourFnc ->
             if (!ourFnc.isInTestModule() ||//not in test module ?
                     ourFnc.isNotAnnotatedTest() || //if its not a test ?

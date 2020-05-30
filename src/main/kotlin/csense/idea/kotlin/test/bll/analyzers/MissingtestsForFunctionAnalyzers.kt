@@ -1,10 +1,8 @@
 package csense.idea.kotlin.test.bll.analyzers
 
 import com.intellij.codeInspection.*
-import com.intellij.openapi.module.*
 import com.intellij.psi.*
 import csense.idea.base.bll.kotlin.*
-import csense.idea.base.module.*
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.quickfixes.*
 import org.jetbrains.kotlin.idea.refactoring.*
@@ -14,12 +12,13 @@ import kotlin.system.*
 
 object MissingtestsForFunctionAnalyzers {
     fun analyze(ourFunction: KtNamedFunction): AnalyzerResult {
+        val containingKtFile = ourFunction.containingKtFile
         val errors = mutableListOf<AnalyzerError>()
         if (ourFunction.isPrivate() ||
                 ourFunction.isProtected() ||
                 ourFunction.isAbstract() ||
-                ourFunction.containingKtFile.shouldIgnore() ||
-                ourFunction.isInTestModule()) {
+                containingKtFile.shouldIgnore() ||
+                TestInformationCache.isFileInTestModule(containingKtFile)) {
             return AnalyzerResult.empty//ignore private & protected  methods / non kt files.
         }
         
@@ -32,11 +31,11 @@ object MissingtestsForFunctionAnalyzers {
                 return AnalyzerResult(errors)
             }
             
-            val containingKtFile = ourFunction.containingKtFile
-            
             val safeContainingClass = parent
             //step 2 is to find the test file in the test root
-            val testModule = ourFunction.findTestModule() ?: return AnalyzerResult.empty
+            
+            val testModule = TestInformationCache.lookupModuleTestSourceRoot(ourFunction, containingKtFile)
+                    ?: return AnalyzerResult.empty
             val resultingDirectory = testModule.findPackageDir(containingKtFile)
             
             val testFile = resultingDirectory?.findTestFile(containingKtFile)
@@ -89,11 +88,11 @@ object MissingtestsForFunctionAnalyzers {
             testClass: KtClassOrObject?,
             ourFunction: KtNamedFunction,
             resultingDir: PsiDirectory?,
-            testModule: Module,
+            testSourceRoot: PsiDirectory,
             testFile: KtFile?
     ): Array<LocalQuickFix> {
         if (testFile == null) {
-            return arrayOf(CreateTestFileQuickFix(testModule, resultingDir, ourFunction.containingKtFile))
+            return arrayOf(CreateTestFileQuickFix(testSourceRoot, resultingDir, ourFunction.containingKtFile))
         }
         if (testClass == null) {
             return arrayOf(

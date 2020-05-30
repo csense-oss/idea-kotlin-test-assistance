@@ -11,7 +11,9 @@ public class CoverageToolWindow {
     private JLabel MethodsTestedLabel;
     private JComboBox<String> SelectedModule;
     private JLabel PropertiesTestedLabel;
-    private JTable missingClassesTable;
+    private JList<CoverageListData> missingClassesList;
+    private JList<CoverageListData> missingPropertiesList;
+    private JList<CoverageListData> missingFunctionsList;
 
     public JButton getRefreshButton() {
         return RefreshButton;
@@ -39,5 +41,17 @@ public class CoverageToolWindow {
 
     public JLabel getPropertiesTestedLabel() {
         return PropertiesTestedLabel;
+    }
+
+    public JList<CoverageListData> getMissingClassesList() {
+        return missingClassesList;
+    }
+
+    public JList<CoverageListData> getMissingPropertiesList() {
+        return missingPropertiesList;
+    }
+
+    public JList<CoverageListData> getMissingFunctionsList() {
+        return missingFunctionsList;
     }
 }
