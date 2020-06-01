@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "csense-idea"
-version = "0.270"
+version = "0.271"
 
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
@@ -27,7 +27,7 @@ dependencies {
     implementation("csense.kotlin:csense-kotlin-jvm:0.0.35")
     implementation("csense.kotlin:csense-kotlin-annotations-jvm:0.0.17")
     implementation("csense.kotlin:csense-kotlin-ds-jvm:0.0.24")
-    implementation("csense.idea.base:csense-idea-base:0.1.10")
+    implementation("csense.idea.base:csense-idea-base:0.1.13")
 }
 
 
