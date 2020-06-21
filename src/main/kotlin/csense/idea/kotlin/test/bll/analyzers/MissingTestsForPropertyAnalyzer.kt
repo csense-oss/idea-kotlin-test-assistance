@@ -13,13 +13,14 @@ import kotlin.system.*
 object MissingTestsForPropertyAnalyzer {
     fun analyze(item: KtProperty): AnalyzerResult {
         val containingKtFile = item.containingKtFile
+        val project = containingKtFile.project
         val errors = mutableListOf<AnalyzerError>()
         if (item.isPrivate() ||
                 item.isProtected() ||
                 item.isAbstract() ||
                 !item.hasCustomSetterGetter() ||
                 containingKtFile.shouldIgnore() ||
-                TestInformationCache.isFileInTestModule(containingKtFile)) {
+                TestInformationCache.isFileInTestModuleOrSourceRoot(containingKtFile, project)) {
             return AnalyzerResult.empty//ignore private & protected  methods / non kt files.
         }
         val safeContainingClasss = item.containingClassOrObject?.namedClassOrObject()
@@ -31,7 +32,8 @@ object MissingTestsForPropertyAnalyzer {
             
             //step 2 is to find the test file in the test root
             
-            val testModule = TestInformationCache.lookupModuleTestSourceRoot(item, containingKtFile) ?: return AnalyzerResult.empty
+            val testModule = TestInformationCache.lookupModuleTestSourceRoot(containingKtFile)
+                    ?: return AnalyzerResult.empty
             val resultingDirectory = testModule.findPackageDir(containingKtFile)
             
             val testFile = resultingDirectory?.findTestFile(containingKtFile)

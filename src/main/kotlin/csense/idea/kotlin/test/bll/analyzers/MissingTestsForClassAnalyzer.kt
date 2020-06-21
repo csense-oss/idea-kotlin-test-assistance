@@ -11,8 +11,8 @@ import csense.idea.base.bll.psi.*
 import csense.idea.base.module.*
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.quickfixes.*
-import csense.kotlin.extensions.primitives.*
 import org.jetbrains.kotlin.asJava.*
+import org.jetbrains.kotlin.idea.caches.project.*
 import org.jetbrains.kotlin.idea.util.*
 import org.jetbrains.kotlin.idea.util.projectStructure.*
 import org.jetbrains.kotlin.psi.*
@@ -21,11 +21,11 @@ import org.jetbrains.kotlin.psi.psiUtil.*
 object MissingTestsForClassAnalyzer {
     
     fun analyze(outerClass: KtClassOrObject): AnalyzerResult {
-        
-        val errors = mutableListOf<AnalyzerError>()
         val ourClass = outerClass.namedClassOrObject()
         val containingKtFile = ourClass.containingKtFile
-        if (TestInformationCache.isFileInTestModule(containingKtFile) ||
+        val project = containingKtFile.project
+        val errors = mutableListOf<AnalyzerError>()
+        if (TestInformationCache.isFileInTestModuleOrSourceRoot(containingKtFile, project) ||
                 ourClass.isCompanion() ||
                 ourClass.isAbstract() ||
                 ourClass.isSealed() ||
@@ -37,6 +37,7 @@ object MissingTestsForClassAnalyzer {
         //if it is Anonymous
         if (ourClass.isAnonymous()) {
             //we want to avoid marking the whole ann class..
+            //TODO this can provoke exceptionsif the superTypeList is empty.
             errors.add(AnalyzerError(
                     ourClass.findDescendantOfType<KtSuperTypeList>() ?: ourClass,
                     "Anonymous classes are hard to test, consider making this a class of itself",
@@ -58,7 +59,7 @@ object MissingTestsForClassAnalyzer {
         }
         
         //step 2 is to find the test file in the test root
-        val testSourceRoot = TestInformationCache.lookupModuleTestSourceRoot(ourClass, containingKtFile)
+        val testSourceRoot = TestInformationCache.lookupModuleTestSourceRoot(containingKtFile)
                 ?: return AnalyzerResult.empty
         
         val resultingDirectory = testSourceRoot.findPackageDir(containingKtFile)
@@ -136,13 +137,26 @@ fun Array<VirtualFile>.filterTestSourceRoots(project: Project): List<VirtualFile
 
 fun Module.findMostPropableTestModule(): Module? {
     val searchingFor = this.name
-    return this.project.allModules().find { mod: Module ->
+    val allMods = project.allModules()
+    if (isMPPModule || isNewMPPModule) {
+        return when {
+            searchingFor.contains("common", true) -> allMods.firstOrNull {
+                it.isTestModule() && it.name.contains("commonTest", true)
+            }
+            searchingFor.contains("jvm", true) -> allMods.firstOrNull {
+                it.isTestModule() && it.name.contains("jvmTest", true)
+            }
+            searchingFor.contains("js", true) -> allMods.firstOrNull {
+                it.isTestModule() && it.name.contains("jsTest", true)
+            }
+            else -> allMods.firstOrNull { it.isTestModule() }
+        }
+    }
+    return allMods.find { mod: Module ->
         val modName = mod.name
-        //if the name starts with the same and ends with test
-        if (modName.doesNotEndsWith("test", true) || modName.length < 4) {
+        if (!mod.isTestModule()) {
             return@find false
         }
-        
         if (!ModuleRootManager.getInstance(mod).isDependsOn(this)) {
             return@find false
         }

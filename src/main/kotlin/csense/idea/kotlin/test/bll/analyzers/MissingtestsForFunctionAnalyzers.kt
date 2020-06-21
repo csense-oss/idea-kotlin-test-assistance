@@ -11,14 +11,15 @@ import org.jetbrains.kotlin.psi.psiUtil.*
 import kotlin.system.*
 
 object MissingtestsForFunctionAnalyzers {
-    fun analyze(ourFunction: KtNamedFunction): AnalyzerResult {
+    fun analyze(ourFunction: KtNamedFunction, includeAll: Boolean = false): AnalyzerResult {
         val containingKtFile = ourFunction.containingKtFile
+        val project = containingKtFile.project
         val errors = mutableListOf<AnalyzerError>()
         if (ourFunction.isPrivate() ||
                 ourFunction.isProtected() ||
                 ourFunction.isAbstract() ||
                 containingKtFile.shouldIgnore() ||
-                TestInformationCache.isFileInTestModule(containingKtFile)) {
+                TestInformationCache.isFileInTestModuleOrSourceRoot(containingKtFile, project)) {
             return AnalyzerResult.empty//ignore private & protected  methods / non kt files.
         }
         
@@ -28,14 +29,14 @@ object MissingtestsForFunctionAnalyzers {
             
             //skip anonymous classes' function(s)
             if (parent != null && parent.isAnonymous()) {
-                return AnalyzerResult(errors)
+                return@analyze AnalyzerResult(errors)
             }
             
             val safeContainingClass = parent
             //step 2 is to find the test file in the test root
             
-            val testModule = TestInformationCache.lookupModuleTestSourceRoot(ourFunction, containingKtFile)
-                    ?: return AnalyzerResult.empty
+            val testModule = TestInformationCache.lookupModuleTestSourceRoot(containingKtFile)
+                    ?: return@analyze AnalyzerResult(errors)
             val resultingDirectory = testModule.findPackageDir(containingKtFile)
             
             val testFile = resultingDirectory?.findTestFile(containingKtFile)
@@ -51,7 +52,7 @@ object MissingtestsForFunctionAnalyzers {
             }
             
             if (testFile == null && !ourFunction.isTopLevel) {
-                return AnalyzerResult(errors) //skip class / obj functions if no test file is found
+                return@analyze AnalyzerResult(errors) //skip class / obj functions if no test file is found
             }
             val namesToLookAt = ourFunction.computeViableNames()
             val haveTestOfMethod = testFile?.haveTestOfMethod(

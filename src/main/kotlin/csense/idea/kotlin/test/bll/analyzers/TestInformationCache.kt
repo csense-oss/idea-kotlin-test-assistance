@@ -1,29 +1,31 @@
 package csense.idea.kotlin.test.bll.analyzers
 
 import com.intellij.openapi.module.*
+import com.intellij.openapi.project.*
+import com.intellij.openapi.roots.*
 import com.intellij.psi.*
-import csense.idea.base.module.*
 import csense.kotlin.ds.cache.*
 import org.jetbrains.kotlin.psi.*
 
 object TestInformationCache {
     
-    fun isFileInTestModule(file: PsiFile): Boolean {
+    fun isFileInTestModuleOrSourceRoot(file: PsiFile, project: Project): Boolean {
         isFileInTestModuleCache[file]?.let {
-            return@isFileInTestModule it
+            return@isFileInTestModuleOrSourceRoot it
         }
-        return file.isInTestModule().apply {
+        
+        return ProjectFileIndex.SERVICE.getInstance(project).isInTestSourceContent(file.virtualFile).apply {
             isFileInTestModuleCache[file] = this
         }
     }
     
-    fun lookupModuleTestSourceRoot(element: PsiElement, file: KtFile): PsiDirectory? {
+    fun lookupModuleTestSourceRoot(file: KtFile): PsiDirectory? {
         val module = ModuleUtil.findModuleForFile(file) ?: return null
         moduleToTestSourceRoot[module]?.let {
             return@lookupModuleTestSourceRoot it
         }
         
-        return element.findMostPropableTestSourceRoot().apply {
+        return file.findMostPropableTestSourceRoot().apply {
             moduleToTestSourceRoot[module] = this
         }
     }
