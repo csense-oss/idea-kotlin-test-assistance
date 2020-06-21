@@ -35,6 +35,7 @@ tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml
       <ul>
         <li>Performance for test inspections</li>
         <li>fixes for test source roots and better MPP support</li>
+        <li>UI updates</li>
       </ul>
       """)
 }
