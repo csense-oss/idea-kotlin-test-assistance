@@ -1,15 +1,20 @@
 package csense.idea.kotlin.test.bll
 
 import com.intellij.psi.*
+import csense.idea.base.bll.kotlin.*
+import csense.idea.base.bll.psi.*
 import csense.kotlin.extensions.*
-import csense.kotlin.extensions.primitives.startsWithAny
-import org.jetbrains.kotlin.idea.references.*
-import org.jetbrains.kotlin.js.resolve.diagnostics.*
+import csense.kotlin.extensions.collections.list.*
+import csense.kotlin.extensions.primitives.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 
 
-fun KtNamedFunction.computeMostViableSimpleTestData(safeTestName: String, ktPsiFactory: KtPsiFactory): PsiElement {
+fun KtNamedFunction.computeMostViableSimpleTestData(
+        safeTestName: String,
+        ktPsiFactory: KtPsiFactory,
+        createAssertStatements: Boolean = false
+): PsiElement {
     val receiverTypeReference = receiverTypeReference
     val typeToGuessOpt: KtTypeReference? = if (receiverTypeReference != null && valueParameters.isEmpty()) {
         receiverTypeReference
@@ -23,9 +28,62 @@ fun KtNamedFunction.computeMostViableSimpleTestData(safeTestName: String, ktPsiF
     }
     
     val code = handleOuterType(typeToGuessOpt, isTopLevel, true, safeTestName)
-    return code.wrapInAsFunction(safeTestName.decapitalize(), ktPsiFactory)
-    
+    val rt = this.getDeclaredReturnType()
+    val isUnit = rt == null || (rt is KtClassOrObject) && rt.isUnit()
+    val codeWithAssert = if (createAssertStatements && code.result.isNotEmpty() && !isUnit) {
+        val bestAssertType = computeBestAssertCsense(this)
+        code.result.lines().joinToString("\n") { "$it.$bestAssertType" }
+    } else {
+        code.result
+    }
+    return if (code.isClass) {
+        KtPsiFactory(project).createClass(code.result)
+    } else {
+        codeWithAssert.wrapInAsFunction(safeTestName.decapitalize(), ktPsiFactory)
+    }
 }
+
+fun KtClassOrObject.isUnit(): Boolean {
+    val name = fqName?.asString()
+    return name == "kotlin.Unit"
+}
+
+fun computeBestAssertCsense(ktNamedFunction: KtNamedFunction): String {
+    val default = "assert()"
+    val returnType = ktNamedFunction.getDeclaredReturnType() as? PsiNamedElement
+    val name = returnType?.name ?: ""
+    if (returnType is KtClass) {
+        if (returnType.isEnum()) {
+            val enumName: String = returnType.getEnumValues().firstOrNull()?.name ?: ""
+            return "assert($name.$enumName)"
+        } else if (returnType.isSealed()) {
+            val clzFirst = returnType.findSealedClassInheritors().firstOrNull()
+            val containsSuperClassName = clzFirst?.isClassContainedIn(name) ?: false
+            val containing = containsSuperClassName.map("$name.", "")
+            return "assert($containing${clzFirst?.name ?: ""}())"
+        }
+    }
+    
+    if (name in setOf("List", "Map", "MutableList", "MutableMap", "Set", "MutableSet")) {
+        return "assertContains()"
+    }
+    
+    return when (name) {
+        "String" -> "assert(\"expected\")"
+        "Integer" -> "assert(0)"
+        "Boolean" -> "assertFalse()"
+        "Double" -> "assert(0.0)"
+        "Float" -> "assert(0f)"
+        "Long" -> "assert(0L)"
+        "Character" -> "assert('0')"
+        else -> default
+    }
+}
+
+fun PsiClass.isClassContainedIn(containingName: String): Boolean {
+    return getKotlinFqNameString()?.contains(".$containingName.") ?: false
+}
+
 
 private fun String.wrapInAsFunction(safeTestName: String, ktPsiFactory: KtPsiFactory): KtNamedFunction {
     return ktPsiFactory.createFunction("""
@@ -51,16 +109,22 @@ fun KtProperty.computeMostViableSimpleTestData(safeTestName: String, ktPsiFactor
         return "".wrapInAsFunction(safeTestName, ktPsiFactory)
     }
     val code = handleOuterType(typeToGuessOpt, isTopLevel, false, safeTestName)
-    return code.wrapInAsFunction(safeTestName, ktPsiFactory)
+    return if (code.isClass) {
+        KtPsiFactory(project).createClass(code.result)
+    } else {
+        code.result.wrapInAsFunction(safeTestName, ktPsiFactory)
+    }
 }
+
+class OuterTypeResult(val isClass: Boolean, val result: String)
 
 private fun KtNamedDeclaration.handleOuterType(
         typeToGuessOpt: KtTypeReference?,
         topLevel: Boolean,
         generateInvocation: Boolean,
         safeTestName: String
-): String {
-    val typeToGuess = typeToGuessOpt ?: return ""
+): OuterTypeResult {
+    val typeToGuess = typeToGuessOpt ?: return OuterTypeResult(false, "")
     val nameOfType = typeToGuess.text
     val isKnown = when (nameOfType) {
         
@@ -69,12 +133,12 @@ private fun KtNamedDeclaration.handleOuterType(
         "List<Short>" -> shortListExamples
         "List<Int>" -> intListExamples
         "List<Long>" -> longListExamples
-        
+    
         "List<Float>" -> floatListExamples
         "List<Double>" -> doubleListExamples
-        
+    
         "List<Boolean>" -> booleanListExamples
-        
+    
         "List<Char>" -> charListExamples
         "List<String>" -> stringListExamples
         //endregion
@@ -84,12 +148,12 @@ private fun KtNamedDeclaration.handleOuterType(
         "Array<Short>" -> shortArrayExamples
         "Array<Int>" -> intArrayExamples
         "Array<Long>" -> longArrayExamples
-        
+    
         "Array<Float>" -> floatArrayExamples
         "Array<Double>" -> doubleArrayExamples
-        
+    
         "Array<Boolean>" -> booleanArrayExamples
-        
+    
         "Array<Char>" -> charArrayExamples
         "Array<String>" -> stringArrayExamples
         //endregion
@@ -99,44 +163,45 @@ private fun KtNamedDeclaration.handleOuterType(
         "Short" -> shortExamples
         "Int" -> intExamples
         "Long" -> longExamples
-        
+    
         "Float" -> floatExamples
         "Double" -> doubleExamples
-        
+    
         "Char" -> charExamples
-        
+    
         "Boolean" -> boolExamples
-        
+    
         "String" -> stringExamples
         //endregion
-        
+    
         else -> null
     }
     if (isKnown != null) {
-        return convertListToRealCode(isKnown, this, topLevel, generateInvocation)
+        return OuterTypeResult(false, convertListToRealCode(isKnown, this, topLevel, generateInvocation))
     }//run though all classes and create that as "cases".
     //create code for each edition of the enum
     
     if (nameOfType.isTypeProperlyAListType()) {
-        return computeListTestCode(safeTestName)
+        return OuterTypeResult(true, computeListTestCode(safeTestName))
     }
     
-    val realElement = typeToGuess.resolveToRealElement() ?: return ""
+    val realElement = typeToGuess.resolve() ?: return OuterTypeResult(true, "")
     when (realElement) {
         is KtClass -> when {
             realElement.isEnum() -> {
                 val values = realElement.getEnumValues()
-                return convertListToRealCode(values.map { "$nameOfType.${it.name}" }, this, topLevel, generateInvocation)
+                return OuterTypeResult(false, convertListToRealCode(values.map { "$nameOfType.${it.name}" }, this, topLevel, generateInvocation))
                 //create code for each edition of the enum
             }
             realElement.isSealed() -> {
-                
+                val cases = realElement.findSealedClassInheritors()
+                return OuterTypeResult(false, convertListToRealCode(cases.map { "${it.name}" }, this, topLevel, generateInvocation))
                 //run though all classes and create that as "cases".
             }
         }
     }
     
-    return ""
+    return OuterTypeResult(false, "")
 }
 
 fun String.isTypeProperlyAListType(): Boolean =
@@ -167,16 +232,6 @@ fun convertListToRealCode(
     return result.joinToString("\n")
 }
 
-fun KtTypeReference.resolveToRealElement(): PsiElement? {
-    return (typeElement as? KtUserType)
-            ?.referenceExpression
-            ?.resolveMainReferenceToDescriptors()
-            ?.firstOrNull()?.findPsi()
-}
-
-fun KtClass.getEnumValues(): List<KtEnumEntry> {
-    return collectDescendantsOfType<KtEnumEntry>()
-}
 
 fun String.safeFunctionName(): String {
     return replace("?", "")
@@ -199,6 +254,9 @@ private val stringExamples = listOf(
         "\"a\"",
         "\"abc\"",
         "\"1234\"",
+        "\"Other region 한\"",
+        "\"Hi ☺\"",
+        "\"�\b\"",
         "\"\\n\"",
         "\"...()[]\"")
 
@@ -239,8 +297,10 @@ private val boolExamples = listOf(
 private val charExamples = listOf(
         "' '",
         "'a'",
+        "'Q'",
         "'1'",
         "'?'",
+        "'\b'",
         "'\\n'"
 )
 private val byteExamples = listOf(

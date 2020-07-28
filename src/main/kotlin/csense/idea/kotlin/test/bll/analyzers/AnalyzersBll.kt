@@ -2,6 +2,7 @@ package csense.idea.kotlin.test.bll.analyzers
 
 import com.intellij.codeInspection.*
 import com.intellij.psi.*
+import csense.idea.base.bll.*
 
 
 class AnalyzerError(
@@ -11,7 +12,7 @@ class AnalyzerError(
 )
 
 fun ProblemsHolder.registerProblem(analyzeError: AnalyzerError) {
-    registerProblem(analyzeError.psiElement, analyzeError.descriptionTemplate, *analyzeError.fixes)
+    registerProblemSafe(analyzeError.psiElement, analyzeError.descriptionTemplate, *analyzeError.fixes)
 }
 
 class AnalyzerResult(val errors: List<AnalyzerError>) {

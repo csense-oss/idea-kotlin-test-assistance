@@ -1,15 +1,12 @@
 package csense.idea.kotlin.test.quickfixes
 
-import com.intellij.codeInspection.LocalQuickFix
-import com.intellij.codeInspection.ProblemDescriptor
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiDirectory
-import com.intellij.util.IncorrectOperationException
-import csense.idea.base.module.createPackageFolders
-import csense.idea.base.module.findKotlinRootDir
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtPsiFactory
+import com.intellij.codeInspection.*
+import com.intellij.openapi.project.*
+import com.intellij.psi.*
+import com.intellij.util.*
+import csense.idea.base.module.*
+import org.jetbrains.kotlin.psi.*
+import java.io.*
 
 
 class CreateTestFileQuickFix(
@@ -29,16 +26,23 @@ class CreateTestFileQuickFix(
     override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
         val newClass = KtPsiFactory(project)
         val packageName = ktFile.packageFqName.asString()
-        val className = ktFile.virtualFile.nameWithoutExtension + "Test"
+        val className = ktFile.virtualFile.nameWithoutExtension.capitalize() + "Test"
         val fileName = "$className.kt"
         val dir: PsiDirectory = resultingDirectory ?: (rootDir.createPackageFolders(packageName) ?: return)
         try {
+            //if the file was already created
+            if (dir.files.any { it.name == fileName }) {
+                return
+            }
             val file = dir.createFile(fileName)
-            file.add(newClass.createAnnotationEntry("@file:Suppress(\"unused\")"))
+//            file.add(newClass.createAnnotationEntry("@file:Suppress(\"unused\")")) //causes null ptr exceptions ?
             file.add(newClass.createPackageDirective(ktFile.packageFqName))
             file.add(newClass.createClass("class $className{\n}"))
         } catch (e: IncorrectOperationException) {
-            throw e //TODO make me.
+            throw e
+        } catch (e: IOException) {
+            // we do not want to disturb the user, this is expected,
+            // say the file exists and IDEA just have not updated the quickfix.
         }
         return
     }

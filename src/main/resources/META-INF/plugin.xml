@@ -1,6 +1,6 @@
 <idea-plugin>
     <id>csense-idea.kotlin-test</id>
-    <name>Csense - kotlin test assistance</name>
+    <name>Csense - Kotlin Test Assistance</name>
     <vendor email="csense@tvedesys.dk" url="https://github.com/csense-oss/idea-kotlin-test-assistance">
         Csense oss
     </vendor>
@@ -22,8 +22,12 @@
     <extensions defaultExtensionNs="com.intellij">
         <inspectionToolProvider
                 implementation="csense.idea.kotlin.test.inspections.InspectionsProvider"/>
-        <toolWindow id="Method / class coverage Tool window" icon="/icons/toolwindow.png" anchor="right"
+        <toolWindow id="Csense Kotlin Test - Method / Class coverage" icon="/icons/toolwindow.png" anchor="right"
                     factoryClass="csense.idea.kotlin.test.toolwindow.CoverageToolWindowFactory"/>
+
+        <applicationConfigurable groupId="tools" displayName="Csense Kotlin Tests"
+                                 id="csenseKotlinTestSettingsPage"
+                                 instance="csense.idea.kotlin.test.settings.SettingsPage"/>
     </extensions>
 
     <actions>

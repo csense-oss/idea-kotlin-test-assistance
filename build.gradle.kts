@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "csense-idea"
-version = "0.272"
+version = "0.280"
 
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
@@ -26,16 +26,14 @@ dependencies {
     implementation("csense.kotlin:csense-kotlin-jvm:0.0.36")
     implementation("csense.kotlin:csense-kotlin-annotations-jvm:0.0.18")
     implementation("csense.kotlin:csense-kotlin-ds-jvm:0.0.25")
-    implementation("csense.idea.base:csense-idea-base:0.1.16")
+    implementation("csense.idea.base:csense-idea-base:0.1.19")
 }
 
 
 tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml") {
     changeNotes("""
       <ul>
-        <li>Performance for test inspections</li>
-        <li>fixes for test source roots and better MPP support</li>
-        <li>UI updates</li>
+        <li>More improvements / exception fixes</li>
       </ul>
       """)
 }

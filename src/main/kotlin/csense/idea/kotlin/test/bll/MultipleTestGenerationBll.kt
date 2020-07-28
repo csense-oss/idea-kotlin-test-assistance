@@ -2,7 +2,7 @@ package csense.idea.kotlin.test.bll
 
 fun computeListTestCode(testName: String): String {
     return """
-        class $testName {
+        class ${testName.capitalize()} {
             @Test
             fun empty(){
                 //TODO test empty condition here.
@@ -19,4 +19,12 @@ fun computeListTestCode(testName: String): String {
             }
         }
         """
+}
+
+fun computeEnumListTestCode() {
+
+}
+
+fun computeSealedClassListTestCode() {
+
 }
