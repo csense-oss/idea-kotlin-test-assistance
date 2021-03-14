@@ -24,20 +24,20 @@ import javax.swing.event.*
 
 
 class CoverageToolWindowWrapper(project: Project) {
-    
+
     val window = CoverageToolWindow()
-    
+
     val content: JComponent
         get() = window.content
-    
+
     private var modules = computeModules(project)
-    
+
     private fun computeModules(project: Project): List<Module> {
         return project.allModules().filter {
             !it.isTestModule()
         }
     }
-    
+
     private val navigateSelectionListener = ListSelectionListener {
         if (it.valueIsAdjusting) {
             return@ListSelectionListener
@@ -52,11 +52,11 @@ class CoverageToolWindowWrapper(project: Project) {
             } else {
                 val clz = data?.psiElement?.containingFile?.navigate(true)
             }
-            
-            
+
+
         }
     }
-    
+
     init {
         window.refreshButton.addActionListener {
             modules = computeModules(project)
@@ -72,20 +72,20 @@ class CoverageToolWindowWrapper(project: Project) {
         window.missingFunctionsList.addListSelectionListener(navigateSelectionListener)
         window.missingPropertiesList.addListSelectionListener(navigateSelectionListener)
     }
-    
+
     private fun calculateCoverageForSelection(project: Project) {
         val selectedModule = modules.getOrNull(window.selectedModule.selectedIndex)
-                ?: return
+            ?: return
         computeForSelected(selectedModule, project)
     }
-    
+
     private fun computeForSelected(selectedModule: Module, project: Project) {
         try {
             ApplicationManager.getApplication().invokeAndWait(Runnable {
                 val backgroundableWrapper = BackgroundableWrapper(
-                        project,
-                        selectedModule,
-                        "Computing coverage for module ${selectedModule.name}"
+                    project,
+                    selectedModule,
+                    "Computing coverage for module ${selectedModule.name}"
                 ) {
                     SwingUtilities.invokeLater {
                         window.update(it)
@@ -97,7 +97,7 @@ class CoverageToolWindowWrapper(project: Project) {
             L.debug("coverageToolWindow", "Got error while computing coverage", e)
         }
     }
-    
+
 }
 
 data class CoverageListData(val fqName: String, val psiElement: PsiElement) {
@@ -122,22 +122,22 @@ fun PsiElement.toCoverageListData(): CoverageListData {
 }
 
 data class BackgroundAnalyzeResult(
-        val seenClasses: Int,
-        val testedClasses: Int,
-        val seenMethods: Int,
-        val testedMethods: Int,
-        val missingClassFq: List<PsiElement>,
-        val missingFunctionFq: List<PsiElement>,
-        val missingPropertyFq: List<PsiElement>
+    val seenClasses: Int,
+    val testedClasses: Int,
+    val seenMethods: Int,
+    val testedMethods: Int,
+    val missingClassFq: List<PsiElement>,
+    val missingFunctionFq: List<PsiElement>,
+    val missingPropertyFq: List<PsiElement>
 )
 
 class BackgroundableWrapper(
-        project: Project,
-        val module: Module,
-        title: String,
-        val updateCallback: FunctionUnit<BackgroundAnalyzeResult>
+    project: Project,
+    val module: Module,
+    title: String,
+    val updateCallback: FunctionUnit<BackgroundAnalyzeResult>
 ) : Task.Backgroundable(project, title, true, PerformInBackgroundOption.DEAF) {
-    
+
     private var seenClasses = 0
     private var testedClasses = 0
     private var seenMethods = 0
@@ -147,31 +147,33 @@ class BackgroundableWrapper(
     private var missingClassesFqPsi = mutableListOf<PsiElement>()
     private var missingFunctionFqPsi = mutableListOf<PsiElement>()
     private var missingPropertiesFqPsi = mutableListOf<PsiElement>()
-    
+
     override fun run(indicator: ProgressIndicator) {
         ApplicationManager.getApplication().runReadAction {
             val fileIndex = ProjectFileIndex.SERVICE.getInstance(project)
             module.sourceRoots.forEach {
                 it.visit(fileIndex)
                 updateCallback(
-                        BackgroundAnalyzeResult(
-                                seenClasses, testedClasses, seenMethods, testedMethods,
-                                missingClassesFqPsi,
-                                missingFunctionFqPsi,
-                                missingPropertiesFqPsi))
+                    BackgroundAnalyzeResult(
+                        seenClasses, testedClasses, seenMethods, testedMethods,
+                        missingClassesFqPsi,
+                        missingFunctionFqPsi,
+                        missingPropertiesFqPsi
+                    )
+                )
             }
         }
     }
-    
+
     override fun shouldStartInBackground(): Boolean {
         return true
     }
-    
+
     private fun VirtualFile.visit(fileIndex: ProjectFileIndex) {
         if (extension == "kt" && fileIndex.isInSourceContent(this)) {
             val ktFile = this.toPsiFile(project) as? KtFile ?: return
             //open file and analyze it.
-            
+
             ktFile.collectDescendantsOfType<KtClassOrObject>().forEach {
                 val analyzeResult = MissingTestsForClassAnalyzer.analyze(it)
                 seenClasses += 1
@@ -205,6 +207,6 @@ class BackgroundableWrapper(
             }
         }
     }
-    
+
 }
 

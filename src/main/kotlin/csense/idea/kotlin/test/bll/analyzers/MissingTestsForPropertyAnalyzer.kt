@@ -4,6 +4,7 @@ import com.intellij.codeInspection.*
 import com.intellij.psi.*
 import csense.idea.base.bll.kotlin.*
 import csense.idea.kotlin.test.bll.*
+import csense.idea.kotlin.test.bll.testGeneration.safeDecapitizedFunctionName
 import csense.idea.kotlin.test.quickfixes.*
 import org.jetbrains.kotlin.idea.refactoring.*
 import org.jetbrains.kotlin.psi.*
@@ -16,78 +17,88 @@ object MissingTestsForPropertyAnalyzer {
         val project = containingKtFile.project
         val errors = mutableListOf<AnalyzerError>()
         if (item.isPrivate() ||
-                item.isProtected() ||
-                item.isAbstract() ||
-                !item.hasCustomSetterGetter() ||
-                containingKtFile.shouldIgnore() ||
-                TestInformationCache.isFileInTestModuleOrSourceRoot(containingKtFile, project)) {
+            item.isProtected() ||
+            item.isAbstract() ||
+            !item.hasCustomSetterGetter() ||
+            containingKtFile.shouldIgnore() ||
+            TestInformationCache.isFileInTestModuleOrSourceRoot(containingKtFile, project)
+        ) {
             return AnalyzerResult.empty//ignore private & protected  methods / non kt files.
         }
         val safeContainingClasss = item.containingClassOrObject?.namedClassOrObject()
-        
+
         if (item.hasConstantCustomGetterOnly()) {
             return AnalyzerResult.empty
         }
         val timeInMs = measureTimeMillis {
-            
+
             //step 2 is to find the test file in the test root
-            
+
             val testModule = TestInformationCache.lookupModuleTestSourceRoot(containingKtFile)
-                    ?: return AnalyzerResult.empty
+                ?: return@analyze AnalyzerResult.empty
             val resultingDirectory = testModule.findPackageDir(containingKtFile)
-            
+
             val testFile = resultingDirectory?.findTestFile(containingKtFile)
-            
+
             if (testFile == null && !item.isTopLevel) {
-                return AnalyzerResult.empty //skip class / obj functions if no test file is found
+                return@analyze AnalyzerResult.empty //skip class / obj functions if no test file is found
             }
             val namesToLookAt = item.computeViableNames()
             val haveTestOfMethod = testFile?.haveTestOfMethod(
-                    namesToLookAt,
-                    item.containingKtFile,
-                    safeContainingClasss
+                namesToLookAt,
+                item.containingKtFile,
+                safeContainingClasss
             ) == true
             if (!haveTestOfMethod) {
                 val testClass = testFile?.findMostSuitableTestClass(
-                        safeContainingClasss,
-                        item.containingKtFile.virtualFile.nameWithoutExtension)
+                    safeContainingClasss,
+                    item.containingKtFile.virtualFile.nameWithoutExtension
+                )
                 val fixes = createQuickFixesForFunction(testClass, item, resultingDirectory, testModule, testFile)
-                errors.add(AnalyzerError(item.nameIdentifier ?: item,
+                errors.add(
+                    AnalyzerError(
+                        item.nameIdentifier ?: item,
                         "You have properly not tested this property (getter/setter)",
-                        fixes))
+                        fixes
+                    )
+                )
             }
         }
-        
+
         if (timeInMs > 10) {
             println("Took $timeInMs ms")
         }
         return AnalyzerResult(errors)
     }
-    
+
     fun createQuickFixesForFunction(
-            testClass: KtClassOrObject?,
-            ourProp: KtProperty,
-            resultingDir: PsiDirectory?,
-            testSourceRoot: PsiDirectory,
-            testFile: KtFile?
+        testClass: KtClassOrObject?,
+        ourProp: KtProperty,
+        resultingDir: PsiDirectory?,
+        testSourceRoot: PsiDirectory,
+        testFile: KtFile?
     ): Array<LocalQuickFix> {
         if (testFile == null) {
             return arrayOf(CreateTestFileQuickFix(testSourceRoot, resultingDir, ourProp.containingKtFile))
         }
         if (testClass == null) {
             return arrayOf(
-                    CreateTestClassQuickFix(
-                            ourProp.containingClassOrObject?.namedClassOrObject()?.name
-                                    ?: ourProp.containingKtFile.virtualFile.nameWithoutExtension,
-                            testFile))
+                CreateTestClassQuickFix(
+                    ourProp.containingClassOrObject?.namedClassOrObject()?.name
+                        ?: ourProp.containingKtFile.virtualFile.nameWithoutExtension,
+                    testFile
+                )
+            )
         }
-        
+
         val testName = ourProp.computeMostPreciseName()
-        return arrayOf(AddTestPropertyQuickFix(
+        return arrayOf(
+            AddTestPropertyQuickFix(
                 ourProp,
                 testName,
                 testClass
-        ))
+            )
+        )
     }
 }
 

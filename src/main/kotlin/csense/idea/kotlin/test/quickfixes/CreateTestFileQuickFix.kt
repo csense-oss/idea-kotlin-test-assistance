@@ -10,19 +10,19 @@ import java.io.*
 
 
 class CreateTestFileQuickFix(
-        val rootDir: PsiDirectory,
-        val resultingDirectory: PsiDirectory?,
-        val ktFile: KtFile
+    val rootDir: PsiDirectory,
+    val resultingDirectory: PsiDirectory?,
+    val ktFile: KtFile
 ) : LocalQuickFix {
-    
+
     override fun getName(): String {
         return "Add test file"
     }
-    
+
     override fun getFamilyName(): String {
         return this::class.java.simpleName
     }
-    
+
     override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
         val newClass = KtPsiFactory(project)
         val packageName = ktFile.packageFqName.asString()
@@ -46,5 +46,5 @@ class CreateTestFileQuickFix(
         }
         return
     }
-    
+
 }

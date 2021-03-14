@@ -6,9 +6,9 @@ import csense.idea.base.bll.*
 
 
 class AnalyzerError(
-        val psiElement: PsiElement,
-        val descriptionTemplate: String,
-        val fixes: Array<LocalQuickFix>
+    val psiElement: PsiElement,
+    val descriptionTemplate: String,
+    val fixes: Array<LocalQuickFix>
 )
 
 fun ProblemsHolder.registerProblem(analyzeError: AnalyzerError) {

@@ -4,15 +4,14 @@ package csense.idea.kotlin.test.bll
 
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiElement
+import csense.idea.base.bll.kotlin.isCompanion
 import csense.idea.base.bll.psi.countDescendantOfType
 import csense.idea.base.bll.psi.haveDescendantOfType
 import csense.kotlin.extensions.collections.typed.contains
 import csense.kotlin.extensions.primitives.endsWithAny
 import csense.kotlin.extensions.primitives.startsWithAny
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.kotlin.psi.KtClassOrObject
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.findDescendantOfType
 import org.jetbrains.kotlin.psi.psiUtil.isPublic
@@ -33,11 +32,11 @@ fun PsiDirectory.findTestFile(containingFile: KtFile): KtFile? {
  */
 fun String.computeTestFileNames(): List<String> {
     return listOf(
-            this,
-            this + "Test",
-            this + "KtTest",
-            this + "KtTests",
-            this + "Tests"
+        this,
+        this + "Test",
+        this + "KtTest",
+        this + "KtTests",
+        this + "Tests"
     )
 }
 
@@ -59,19 +58,29 @@ fun KtFile.haveTestOfMethod(fnNames: List<String>, orgFile: KtFile, orgClass: Kt
 }
 
 fun KtFile.findMostSuitableTestClass(forClass: KtClassOrObject?, fileName: String): KtClassOrObject? {
-    return findDescendantOfType { it: KtClassOrObject ->
-        forClass?.name?.let { ourClass ->
-            it.name?.startsWith(ourClass, true)
+    return findMostSuitableTestClassPrivate(forClass, fileName)
+}
+
+fun KtClass.findMostSuitableTestClass(forClass: KtClassOrObject?, fileName: String): KtClassOrObject? {
+    return findMostSuitableTestClassPrivate(forClass, fileName)
+}
+
+private fun KtElement.findMostSuitableTestClassPrivate(forClass: KtClassOrObject?, fileName: String): KtClassOrObject? {
+    return findDescendantOfType { classOrObject: KtClassOrObject ->
+        if (forClass != null && forClass.isCompanion()) {
+            classOrObject.name
         }
-                ?: it.name?.startsWith(fileName, true)
-                ?: false
+        forClass?.name?.let { ourClass ->
+            classOrObject.name?.startsWith(ourClass, true)
+        } ?: classOrObject.name?.startsWith(fileName, true) ?: false
     }
 }
 
+
 fun KtFile.haveTestMultipleClassOfMethodName(
-        fnNames: List<String>,
-        orgClass: KtClassOrObject?,
-        fileName: String
+    fnNames: List<String>,
+    orgClass: KtClassOrObject?,
+    fileName: String
 ): Boolean {
     val validClass = findMostSuitableTestClass(orgClass, fileName) ?: return false
 
@@ -88,11 +97,11 @@ fun KtFile.haveTestSingleClassOfMethodName(fnNames: List<String>): Boolean = fnN
 }
 
 fun PsiElement.haveTestOfMethodNames(functionNamesToFind: Set<String>): Boolean =
-        haveDescendantOfType<KtNamedFunction> {
-            val name = it.name ?: return@haveDescendantOfType false
-            it.containingClassOrObject?.isTopLevel() == true &&
-                    functionNamesToFind.contains(name, true)
-        }
+    haveDescendantOfType<KtNamedFunction> {
+        val name = it.name ?: return@haveDescendantOfType false
+        it.containingClassOrObject?.isTopLevel() == true &&
+                functionNamesToFind.contains(name, true)
+    }
 
 
 fun KtFile.haveTestSingleClassObjectOfMethodName(fnNames: List<String>): Boolean = fnNames.any { ourFunction ->
@@ -112,10 +121,12 @@ fun KtFile.shouldIgnore(): Boolean {
     return this.fileType != KotlinLanguage.INSTANCE.associatedFileType ||
             !this.virtualFilePath.endsWithAny(".kt", ".kts")
 }
+
 fun String.computeTestNames(): Set<String> {
     return setOf(
-            this,
-            "test" + this.capitalize(),
-            this + "test")
+        this,
+        "test" + this.capitalize(),
+        this + "test"
+    )
 }
 

@@ -22,6 +22,7 @@ public class SettingsPaneUi {
     public JComboBox<String> getAssertionTypeComboBox() {
         return assertionTypeComboBox;
     }
+
     public boolean didChange = false;
 
     public SettingsPaneUi() {

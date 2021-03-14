@@ -19,78 +19,95 @@ import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 
 object MissingTestsForClassAnalyzer {
-    
+
     fun analyze(outerClass: KtClassOrObject): AnalyzerResult {
         val ourClass = outerClass.namedClassOrObject()
         val containingKtFile = ourClass.containingKtFile
         val project = containingKtFile.project
         val errors = mutableListOf<AnalyzerError>()
         if (TestInformationCache.isFileInTestModuleOrSourceRoot(containingKtFile, project) ||
-                ourClass.isCompanion() ||
-                ourClass.isAbstract() ||
-                ourClass.isSealed() ||
-                containingKtFile.shouldIgnore()) {
+            ourClass.isCompanion() ||
+            ourClass.isAbstract() ||
+            ourClass.isSealed() ||
+            containingKtFile.shouldIgnore()
+        ) {
             //skip companion objects / non kt files.
             return AnalyzerResult(errors)
         }
-        
+
         //if it is Anonymous
         if (ourClass.isAnonymous()) {
             //we want to avoid marking the whole ann class..
             //TODO this can provoke exceptionsif the superTypeList is empty.
-            errors.add(AnalyzerError(
+            errors.add(
+                AnalyzerError(
                     ourClass.findDescendantOfType<KtSuperTypeList>() ?: ourClass,
                     "Anonymous classes are hard to test, consider making this a class of itself",
-                    arrayOf()))
+                    arrayOf()
+                )
+            )
             return AnalyzerResult(errors)
         }
-        
+
         //skip classes /things with no functions
         val functions = ourClass.getAllFunctions()
         if (functions.isEmpty()) {
             //if no functions are there, we have "nothing" to test. bail.
             return AnalyzerResult(errors)
         }
-        
+
         //if we are an interface, and we have default impl's, then we should inspect the interface
         // otherwise NO
         if (ourClass.isInterfaceClass() && !ourClass.hasInterfaceDefaultImpls) {
             return AnalyzerResult(errors)
         }
-        
+
         //step 2 is to find the test file in the test root
         val testSourceRoot = TestInformationCache.lookupModuleTestSourceRoot(containingKtFile)
-                ?: return AnalyzerResult.empty
-        
+            ?: return AnalyzerResult.empty
+
         val resultingDirectory = testSourceRoot.findPackageDir(containingKtFile)
         val testFile = resultingDirectory?.findTestFile(containingKtFile)
-        
+
         if (testFile != null) {
             val haveTestClass = testFile.findMostSuitableTestClass(
-                    ourClass,
-                    containingKtFile.virtualFile.nameWithoutExtension)
+                ourClass,
+                containingKtFile.virtualFile.nameWithoutExtension
+            )
             if (haveTestClass != null) {
                 return AnalyzerResult(errors)
             } else {
-                errors.add(AnalyzerError(ourClass.nameIdentifier
-                        ?: ourClass,
+                errors.add(
+                    AnalyzerError(
+                        ourClass.nameIdentifier
+                            ?: ourClass,
                         "You have properly not tested this class",
-                        arrayOf(CreateTestClassQuickFix(
+                        arrayOf(
+                            CreateTestClassQuickFix(
                                 ourClass.name + "Test",
                                 testFile
-                        ))))
+                            )
+                        )
+                    )
+                )
             }
         } else {
-            errors.add(AnalyzerError(ourClass.nameIdentifier
-                    ?: ourClass,
+            errors.add(
+                AnalyzerError(
+                    ourClass.nameIdentifier
+                        ?: ourClass,
                     "You have properly not tested this class",
-                    arrayOf(CreateTestFileQuickFix(
+                    arrayOf(
+                        CreateTestFileQuickFix(
                             testSourceRoot,
                             resultingDirectory,
                             containingKtFile
-                    ))))
+                        )
+                    )
+                )
+            )
         }
-        
+
         return AnalyzerResult(errors)
     }
 }
@@ -106,7 +123,7 @@ fun PsiElement.findMostPropableTestSourceRoot(): PsiDirectory? {
 
 fun Module.findMostPropableTestSourceRootDir(): PsiDirectory? {
     return (findMostPropableTestSourceRoot()
-            ?: findMostPropableTestModule()?.findMostPropableTestSourceRoot())?.toPsiDirectory(project)
+        ?: findMostPropableTestModule()?.findMostPropableTestSourceRoot())?.toPsiDirectory(project)
 }
 
 fun Module.findMostPropableTestSourceRoot(): VirtualFile? {
@@ -160,7 +177,7 @@ fun Module.findMostPropableTestModule(): Module? {
         if (!ModuleRootManager.getInstance(mod).isDependsOn(this)) {
             return@find false
         }
-        
+
         val withoutTestIndex = modName.length - 4
         val withoutTest = modName.substring(0, withoutTestIndex)
         searchingFor.startsWith(withoutTest)
