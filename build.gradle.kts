@@ -1,8 +1,8 @@
 plugins {
-    id("org.jetbrains.intellij") version "0.5.0"
-    kotlin("jvm") version "1.4.31"
+    id("org.jetbrains.intellij") version "0.7.2"
+    kotlin("jvm") version "1.4.32"
     java
-    id("org.owasp.dependencycheck") version "5.3.2"
+    id("org.owasp.dependencycheck") version "6.1.5"
 }
 
 group = "csense-idea"
@@ -18,17 +18,14 @@ intellij {
 
 repositories {
     jcenter()
-    maven(url = "https://dl.bintray.com/csense-oss/maven")
-    maven(url = "https://dl.bintray.com/csense-oss/idea")
-    maven(url = "https://pkgs.dev.azure.com/csense-oss/_packaging/csense-oss/maven/v1")
+    maven(url = "https://pkgs.dev.azure.com/csense-oss/csense-oss/_packaging/csense-oss/maven/v1")
 }
 
 dependencies {
-    implementation("csense.kotlin:csense-kotlin-jvm:0.0.46-snapshot.1")
-    testImplementation("csense.kotlin:csense-kotlin-jvm:0.0.46-snapshot.0")
-    implementation("csense.kotlin:csense-kotlin-annotations-jvm:0.0.40")
+    implementation("csense.kotlin:csense-kotlin-jvm:0.0.46")
+    implementation("csense.kotlin:csense-kotlin-annotations-jvm:0.0.41")
     implementation("csense.kotlin:csense-kotlin-datastructures-algorithms:0.0.41")
-    implementation("csense.idea.base:csense-idea-base:0.1.20")
+    implementation("csense.idea.base:csense-idea-base:0.1.22")
 }
 
 
