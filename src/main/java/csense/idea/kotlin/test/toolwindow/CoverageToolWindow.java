@@ -14,6 +14,9 @@ public class CoverageToolWindow {
     private JList<CoverageListData> missingClassesList;
     private JList<CoverageListData> missingPropertiesList;
     private JList<CoverageListData> missingFunctionsList;
+    private JList<CoverageListData> skippedClassesList;
+    private JList<CoverageListData> skippedFuntionsList;
+    private JList<CoverageListData> skippedPropertiesList;
 
     public JButton getRefreshButton() {
         return RefreshButton;
@@ -53,5 +56,17 @@ public class CoverageToolWindow {
 
     public JList<CoverageListData> getMissingFunctionsList() {
         return missingFunctionsList;
+    }
+
+    public JList<CoverageListData> getSkippedClassesList() {
+        return skippedClassesList;
+    }
+
+    public JList<CoverageListData> getSkippedFunctionsList() {
+        return skippedFuntionsList;
+    }
+
+    public JList<CoverageListData> getSkippedPropertiesList() {
+        return skippedPropertiesList;
     }
 }

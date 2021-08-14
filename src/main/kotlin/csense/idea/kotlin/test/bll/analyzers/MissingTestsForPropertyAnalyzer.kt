@@ -1,6 +1,7 @@
 package csense.idea.kotlin.test.bll.analyzers
 
 import com.intellij.codeInspection.*
+import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import csense.idea.base.bll.kotlin.*
 import csense.idea.kotlin.test.bll.*
@@ -12,9 +13,9 @@ import org.jetbrains.kotlin.psi.psiUtil.*
 import kotlin.system.*
 
 object MissingTestsForPropertyAnalyzer {
-    fun analyze(item: KtProperty): AnalyzerResult {
+    fun analyze(item: KtProperty, itemProject: Project? = null): AnalyzerResult {
         val containingKtFile = item.containingKtFile
-        val project = containingKtFile.project
+        val project = itemProject ?: containingKtFile.project
         val errors = mutableListOf<AnalyzerError>()
         if (item.isPrivate() ||
             item.isProtected() ||

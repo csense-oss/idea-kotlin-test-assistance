@@ -22,7 +22,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <inspectionToolProvider
                 implementation="csense.idea.kotlin.test.inspections.InspectionsProvider"/>
-        <toolWindow id="Csense Kotlin Test - Method / Class coverage" icon="/icons/toolwindow.png" anchor="right"
+        <toolWindow id="Kotlin test coverage" icon="/icons/toolwindow.png" anchor="right"
                     factoryClass="csense.idea.kotlin.test.toolwindow.CoverageToolWindowFactory"/>
 
         <applicationConfigurable groupId="tools" displayName="Csense Kotlin Tests"

@@ -3,7 +3,7 @@ package csense.idea.kotlin.test.inspections
 import com.intellij.codeInspection.*
 
 class InspectionsProvider : InspectionToolProvider {
-    override fun getInspectionClasses(): Array<Class<*>> {
+    override fun getInspectionClasses(): Array<Class<out LocalInspectionTool>> {
         return arrayOf(
             MissingTestsForFunctionInspector::class.java,
             MissingTestsForClassInspector::class.java,

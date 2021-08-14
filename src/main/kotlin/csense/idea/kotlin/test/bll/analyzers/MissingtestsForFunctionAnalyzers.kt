@@ -78,13 +78,15 @@ object MissingtestsForFunctionAnalyzers {
                         safeContainingClass.containingClass(),
                         fileName
                     )
-                    fixes = createQuickFixesForCompanionFunction(
-                        parentTestClass,
-                        ourFunction,
-                        resultingDirectory,
-                        testModule,
-                        testFile
-                    )
+                    fixes = arrayOf()
+                    //TODO
+//                    fixes = createQuickFixesForCompanionFunction(
+//                        parentTestClass,
+//                        ourFunction,
+//                        resultingDirectory,
+//                        testModule,
+//                        testFile
+//                    )
 
                 } else {
                     //TODO use file name if containing is null / empty.
@@ -147,35 +149,35 @@ object MissingtestsForFunctionAnalyzers {
         )
     }
 
-    fun createQuickFixesForCompanionFunction(
-        parentClass: KtClassOrObject?,
-        ourFunction: KtNamedFunction,
-        resultingDir: PsiDirectory?,
-        testSourceRoot: PsiDirectory,
-        testFile: KtFile?
-    ): Array<LocalQuickFix> {
-        if (testFile == null) {
-            return arrayOf(CreateTestFileQuickFix(testSourceRoot, resultingDir, ourFunction.containingKtFile))
-        }
-        if (parentClass == null) {
-            return arrayOf(
-                CreateCompanionTestClassQuickFix(
-                    ourFunction.containingClassOrObject?.namedClassOrObject()?.name
-                        ?: ourFunction.containingKtFile.virtualFile.nameWithoutExtension,
-                    testFile
-                )
-            )
-        }
-
-        val testName = ourFunction.computeMostPreciseName()
-        return arrayOf(
-            AddTestMethodQuickFix(
-                ourFunction,
-                testName,
-                testClass
-            )
-        )
-    }
+//    fun createQuickFixesForCompanionFunction(
+//        parentClass: KtClassOrObject?,
+//        ourFunction: KtNamedFunction,
+//        resultingDir: PsiDirectory?,
+//        testSourceRoot: PsiDirectory,
+//        testFile: KtFile?
+//    ): Array<LocalQuickFix> {
+//        if (testFile == null) {
+//            return arrayOf(CreateTestFileQuickFix(testSourceRoot, resultingDir, ourFunction.containingKtFile))
+//        }
+//        if (parentClass == null) {
+//            return arrayOf(
+//                CreateCompanionTestClassQuickFix(
+//                    ourFunction.containingClassOrObject?.namedClassOrObject()?.name
+//                        ?: ourFunction.containingKtFile.virtualFile.nameWithoutExtension,
+//                    testFile
+//                )
+//            )
+//        }
+//
+//        val testName = ourFunction.computeMostPreciseName()
+//        return arrayOf(
+//            AddTestMethodQuickFix(
+//                ourFunction,
+//                testName,
+//                testClass
+//            )
+//        )
+//    }
 }
 
 
