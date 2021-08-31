@@ -16,6 +16,7 @@ object MissingTestsForPropertyAnalyzer {
     fun analyze(item: KtProperty, itemProject: Project? = null): AnalyzerResult {
         val containingKtFile = item.containingKtFile
         val project = itemProject ?: containingKtFile.project
+        val psiElementToHighlight = item.nameIdentifier ?: item
         val errors = mutableListOf<AnalyzerError>()
         if (item.isPrivate() ||
             item.isProtected() ||
@@ -34,9 +35,18 @@ object MissingTestsForPropertyAnalyzer {
         val timeInMs = measureTimeMillis {
 
             //step 2 is to find the test file in the test root
-
             val testModule = TestInformationCache.lookupModuleTestSourceRoot(containingKtFile)
-                ?: return@analyze AnalyzerResult.empty
+            if (testModule == null) {
+                errors.add(
+                    AnalyzerError(
+                        psiElementToHighlight,
+                        "There are no test source root",
+                        arrayOf()
+                    )
+                )
+                return@analyze AnalyzerResult(errors)
+            }
+
             val resultingDirectory = testModule.findPackageDir(containingKtFile)
 
             val testFile = resultingDirectory?.findTestFile(containingKtFile)
@@ -58,7 +68,7 @@ object MissingTestsForPropertyAnalyzer {
                 val fixes = createQuickFixesForFunction(testClass, item, resultingDirectory, testModule, testFile)
                 errors.add(
                     AnalyzerError(
-                        item.nameIdentifier ?: item,
+                        psiElementToHighlight,
                         "You have properly not tested this property (getter/setter)",
                         fixes
                     )

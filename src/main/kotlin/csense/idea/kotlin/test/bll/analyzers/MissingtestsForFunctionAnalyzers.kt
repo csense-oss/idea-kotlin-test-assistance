@@ -16,6 +16,7 @@ object MissingtestsForFunctionAnalyzers {
     fun analyze(ourFunction: KtNamedFunction, includeAll: Boolean = false): AnalyzerResult {
         val containingKtFile = ourFunction.containingKtFile
         val project = containingKtFile.project
+        val psiElementToHighlight = ourFunction.nameIdentifier ?: ourFunction
         val errors = mutableListOf<AnalyzerError>()
         if (ourFunction.isPrivate() ||
             ourFunction.isProtected() ||
@@ -39,7 +40,17 @@ object MissingtestsForFunctionAnalyzers {
             //step 2 is to find the test file in the test root
 
             val testModule = TestInformationCache.lookupModuleTestSourceRoot(containingKtFile)
-                ?: return@analyze AnalyzerResult(errors)
+            if (testModule == null) {
+                errors.add(
+                    AnalyzerError(
+                        psiElementToHighlight,
+                        "There are no test source root",
+                        arrayOf()
+                    )
+                )
+                return@analyze AnalyzerResult(errors)
+            }
+
             val resultingDirectory = testModule.findPackageDir(containingKtFile)
 
             val testFile = resultingDirectory?.findTestFile(containingKtFile)
@@ -47,7 +58,7 @@ object MissingtestsForFunctionAnalyzers {
             if (testFile == null) {
                 errors.add(
                     AnalyzerError(
-                        ourFunction.nameIdentifier ?: ourFunction,
+                        psiElementToHighlight,
                         "There are no test file",
                         arrayOf(
                             CreateTestFileQuickFix(
@@ -106,7 +117,7 @@ object MissingtestsForFunctionAnalyzers {
                 }
                 errors.add(
                     AnalyzerError(
-                        ourFunction.nameIdentifier ?: ourFunction,
+                        psiElementToHighlight,
                         "You have properly not tested this method",
                         fixes
                     )

@@ -25,6 +25,7 @@ object MissingTestsForClassAnalyzer {
         val containingKtFile = ourClass.containingKtFile
         val project = containingKtFile.project
         val errors = mutableListOf<AnalyzerError>()
+        val psiElementToHighlight = ourClass.nameIdentifier ?: ourClass
         if (TestInformationCache.isFileInTestModuleOrSourceRoot(containingKtFile, project) ||
             ourClass.isCompanion() ||
             ourClass.isAbstract() ||
@@ -64,7 +65,16 @@ object MissingTestsForClassAnalyzer {
 
         //step 2 is to find the test file in the test root
         val testSourceRoot = TestInformationCache.lookupModuleTestSourceRoot(containingKtFile)
-            ?: return AnalyzerResult.empty
+        if (testSourceRoot == null) {
+            errors.add(
+                AnalyzerError(
+                    psiElementToHighlight,
+                    "There are no test source root",
+                    arrayOf()
+                )
+            )
+            return AnalyzerResult(errors)
+        }
 
         val resultingDirectory = testSourceRoot.findPackageDir(containingKtFile)
         val testFile = resultingDirectory?.findTestFile(containingKtFile)
@@ -79,8 +89,7 @@ object MissingTestsForClassAnalyzer {
             } else {
                 errors.add(
                     AnalyzerError(
-                        ourClass.nameIdentifier
-                            ?: ourClass,
+                        psiElementToHighlight,
                         "You have properly not tested this class",
                         arrayOf(
                             CreateTestClassQuickFix(
@@ -94,8 +103,7 @@ object MissingTestsForClassAnalyzer {
         } else {
             errors.add(
                 AnalyzerError(
-                    ourClass.nameIdentifier
-                        ?: ourClass,
+                    psiElementToHighlight,
                     "You have properly not tested this class",
                     arrayOf(
                         CreateTestFileQuickFix(
@@ -170,14 +178,20 @@ fun Module.findMostPropableTestModule(): Module? {
         }
     }
     return allMods.find { mod: Module ->
-        val modName = mod.name
-        if (!mod.isTestModule()) {
+        //test will be fixed in next "shared base" (0.1.40)
+        val isTestModule = mod.isTestModule() || run {
+            ModuleRootManager.getInstance(mod).getSourceRoots(false).isEmpty() &&
+                    ModuleRootManager.getInstance(mod).getSourceRoots(true).isNotEmpty()
+        }
+        if (!isTestModule) {
             return@find false
         }
+
         if (!ModuleRootManager.getInstance(mod).isDependsOn(this)) {
             return@find false
         }
 
+        val modName = mod.name
         val withoutTestIndex = modName.length - 4
         val withoutTest = modName.substring(0, withoutTestIndex)
         searchingFor.startsWith(withoutTest)
