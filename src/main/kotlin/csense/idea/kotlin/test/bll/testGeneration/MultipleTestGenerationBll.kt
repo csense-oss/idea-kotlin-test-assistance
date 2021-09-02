@@ -1,7 +1,5 @@
 package csense.idea.kotlin.test.bll.testGeneration
 
-import csense.kotlin.extensions.collections.list.subListSafe
-
 fun computeListTestCode(
     testName: String,
     typeName: String,
@@ -35,11 +33,11 @@ fun computeListTestCode(
         }
         """
 }
-
-fun computeEnumListTestCode() {
-
-}
-
-fun computeSealedClassListTestCode() {
-
-}
+//
+//fun computeEnumListTestCode() {
+//
+//}
+//
+//fun computeSealedClassListTestCode() {
+//
+//}

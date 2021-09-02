@@ -9,82 +9,82 @@ import csense.kotlin.extensions.primitives.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 
-
-fun KtNamedFunction.computeMostViableSimpleTestData(
-    safeTestName: String,
-    ktPsiFactory: KtPsiFactory,
-    createAssertStatements: Boolean = false
-): PsiElement {
-    val receiverTypeReference = receiverTypeReference
-    val typeToGuessOpt: KtTypeReference? = if (receiverTypeReference != null && valueParameters.isEmpty()) {
-        receiverTypeReference
-    } else if (valueParameters.size == 1 && receiverTypeReference == null) {
-        valueParameters.firstOrNull()?.typeReference
-    } else {
-        if (receiverTypeReference != null && receiverTypeReference.text.isTypeProperlyAListType()) {
-            return ktPsiFactory.createClass(
-                computeListTestCode(
-                    safeTestName.capitalize(),
-                    "String",
-                    FunctionInvocationPattern.Method(name ?: "", "")
-                )
-            )
-        }
-        return "".wrapInAsFunction(safeTestName.decapitalize(), ktPsiFactory)
-    }
-
-    val code = handleOuterType(typeToGuessOpt, isTopLevel, true, safeTestName)
-    val rt = this.getDeclaredReturnType()
-    val isUnit = rt == null || (rt is KtClassOrObject) && rt.isUnit()
-    val codeWithAssert = if (createAssertStatements && code.result.isNotEmpty() && !isUnit) {
-        val bestAssertType = computeBestAssertCsense(this)
-        code.result.lines().joinToString("\n") { "$it.$bestAssertType" }
-    } else {
-        code.result
-    }
-    return if (code.isClass) {
-        KtPsiFactory(project).createClass(code.result)
-    } else {
-        codeWithAssert.wrapInAsFunction(safeTestName.decapitalize(), ktPsiFactory)
-    }
-}
+//
+//fun KtNamedFunction.computeMostViableSimpleTestData(
+//    safeTestName: String,
+//    ktPsiFactory: KtPsiFactory,
+//    createAssertStatements: Boolean = false
+//): PsiElement {
+//    val receiverTypeReference = receiverTypeReference
+//    val typeToGuessOpt: KtTypeReference? = if (receiverTypeReference != null && valueParameters.isEmpty()) {
+//        receiverTypeReference
+//    } else if (valueParameters.size == 1 && receiverTypeReference == null) {
+//        valueParameters.firstOrNull()?.typeReference
+//    } else {
+//        if (receiverTypeReference != null && receiverTypeReference.text.isTypeProperlyAListType()) {
+//            return ktPsiFactory.createClass(
+//                computeListTestCode(
+//                    safeTestName.capitalize(),
+//                    "String",
+//                    FunctionInvocationPattern.Method(name ?: "", "", clz)
+//                )
+//            )
+//        }
+//        return "".wrapInAsFunction(safeTestName.decapitalize(), ktPsiFactory)
+//    }
+//
+//    val code = handleOuterType(typeToGuessOpt, isTopLevel, true, safeTestName)
+//    val rt = this.getDeclaredReturnType()
+//    val isUnit = rt == null || (rt is KtClassOrObject) && rt.isUnit()
+//    val codeWithAssert = if (createAssertStatements && code.result.isNotEmpty() && !isUnit) {
+//        val bestAssertType = computeBestAssertCsense(this)
+//        code.result.lines().joinToString("\n") { "$it.$bestAssertType" }
+//    } else {
+//        code.result
+//    }
+//    return if (code.isClass) {
+//        KtPsiFactory(project).createClass(code.result)
+//    } else {
+//        codeWithAssert.wrapInAsFunction(safeTestName.decapitalize(), ktPsiFactory)
+//    }
+//}
 
 fun KtClassOrObject.isUnit(): Boolean {
     val name = fqName?.asString()
     return name == "kotlin.Unit"
 }
-
-fun computeBestAssertCsense(ktNamedFunction: KtNamedFunction): String {
-    val default = "assert()"
-    val returnType = ktNamedFunction.getDeclaredReturnType() as? PsiNamedElement
-    val name = returnType?.name ?: ""
-    if (returnType is KtClass) {
-        if (returnType.isEnum()) {
-            val enumName: String = returnType.getEnumValues().firstOrNull()?.name ?: ""
-            return "assert($name.$enumName)"
-        } else if (returnType.isSealed()) {
-            val clzFirst = returnType.findSealedClassInheritors().firstOrNull()
-            val containsSuperClassName = clzFirst?.isClassContainedIn(name) ?: false
-            val containing = containsSuperClassName.map("$name.", "")
-            return "assert($containing${clzFirst?.name ?: ""}())"
-        }
-    }
-
-    if (name in setOf("List", "Map", "MutableList", "MutableMap", "Set", "MutableSet")) {
-        return "assertContains()"
-    }
-
-    return when (name) {
-        "String" -> "assert(\"expected\")"
-        "Integer" -> "assert(0)"
-        "Boolean" -> "assertFalse()"
-        "Double" -> "assert(0.0)"
-        "Float" -> "assert(0f)"
-        "Long" -> "assert(0L)"
-        "Character" -> "assert('0')"
-        else -> default
-    }
-}
+//
+//fun computeBestAssertCsense(ktNamedFunction: KtNamedFunction): String {
+//    val default = "assert()"
+//    val returnType = ktNamedFunction.getDeclaredReturnType() as? PsiNamedElement
+//    val name = returnType?.name ?: ""
+//    if (returnType is KtClass) {
+//        if (returnType.isEnum()) {
+//            val enumName: String = returnType.getEnumValues().firstOrNull()?.name ?: ""
+//            return "assert($name.$enumName)"
+//        } else if (returnType.isSealed()) {
+//            val clzFirst = returnType.findSealedClassInheritors().firstOrNull()
+//            val containsSuperClassName = clzFirst?.isClassContainedIn(name) ?: false
+//            val containing = containsSuperClassName.map("$name.", "")
+//            return "assert($containing${clzFirst?.name ?: ""}())"
+//        }
+//    }
+//
+//    if (name in setOf("List", "Map", "MutableList", "MutableMap", "Set", "MutableSet")) {
+//        return "assertContains()"
+//    }
+//
+//    return when (name) {
+//        "String" -> "assert(\"expected\")"
+//        "Integer" -> "assert(0)"
+//        "Boolean" -> "assertFalse()"
+//        "Double" -> "assert(0.0)"
+//        "Float" -> "assert(0f)"
+//        "Long" -> "assert(0L)"
+//        "Character" -> "assert('0')"
+//        else -> default
+//    }
+//}
 
 fun PsiClass.isClassContainedIn(containingName: String): Boolean {
     return getKotlinFqNameString()?.contains(".$containingName.") ?: false
@@ -285,7 +285,7 @@ fun String.safeDecapitizedFunctionName(): String {
 }
 
 //region primitive data
-private val stringExamples = listOf(
+val stringExamples = listOf(
     "\"\"",
     "\" \"",
     "\"a\"",
@@ -298,7 +298,7 @@ private val stringExamples = listOf(
     "\"...()[]\""
 )
 
-private val intExamples = listOf(
+val intExamples = listOf(
     "(-1)",
     "0",
     "1",
@@ -306,7 +306,7 @@ private val intExamples = listOf(
     "42"
 )
 
-private val longExamples = listOf(
+val longExamples = listOf(
     "(-1L)",
     "0L",
     "1L",
@@ -314,26 +314,26 @@ private val longExamples = listOf(
     "42L"
 )
 
-private val doubleExamples = listOf(
+val doubleExamples = listOf(
     "(-1).toDouble()",
     "0.toDouble()",
     "1.toDouble()",
     "(-50).toDouble()",
     "42.toDouble()"
 )
-private val floatExamples = listOf(
+val floatExamples = listOf(
     "(-1).toFloat()",
     "0.toFloat()",
     "1.toFloat()",
     "(-50).toFloat()",
     "42.toFloat()"
 )
-private val boolExamples = listOf(
+val boolExamples = listOf(
     "false",
     "true"
 )
 
-private val charExamples = listOf(
+val charExamples = listOf(
     "' '",
     "'a'",
     "'Q'",
@@ -342,14 +342,14 @@ private val charExamples = listOf(
     "'\b'",
     "'\\n'"
 )
-private val byteExamples = listOf(
+val byteExamples = listOf(
     "0.toByte()",
     "(-1).toByte()",
     "1.toByte()",
     "80.toByte()",
     "(-82).toByte()"
 )
-private val shortExamples = listOf(
+val shortExamples = listOf(
     "0.toShort()",
     "(-1).toShort()",
     "1.toShort()",
@@ -359,35 +359,35 @@ private val shortExamples = listOf(
 //endregion
 
 //region list data
-private val stringListExamples = listOf(
+val stringListExamples = listOf(
     "listOf<String>()",
     "listOf(\"\")",
     "listOf(\"a\")",
     "listOf(\"a\",\"b\")"
 )
 
-private val intListExamples = listOf(
+val intListExamples = listOf(
     "listOf<Int>()",
     "listOf(0)",
     "listOf(-1)",
     "listOf(1,2)"
 )
 
-private val charListExamples = listOf(
+val charListExamples = listOf(
     "listOf<Char>()",
     "listOf(' ')",
     "listOf('a')",
     "listOf('a','b')"
 )
 
-private val booleanListExamples = listOf(
+val booleanListExamples = listOf(
     "listOf<Boolean>()",
     "listOf(false)",
     "listOf(true)",
     "listOf(false,true)"
 )
 
-private val floatListExamples = listOf(
+val floatListExamples = listOf(
     "listOf<Float>()",
     "listOf(0f)",
     "listOf(1f)",
@@ -395,7 +395,7 @@ private val floatListExamples = listOf(
     "listOf(5f,-5f)"
 )
 
-private val doubleListExamples = listOf(
+val doubleListExamples = listOf(
     "listOf<Double>()",
     "listOf(0.toDouble())",
     "listOf(5.toDouble())",
@@ -403,7 +403,7 @@ private val doubleListExamples = listOf(
     "listOf(80.toDouble(),(-80).toDouble()))"
 )
 
-private val longListExamples = listOf(
+val longListExamples = listOf(
     "listOf<Long>()",
     "listOf(0L)",
     "listOf(5L)",
@@ -411,14 +411,14 @@ private val longListExamples = listOf(
     "listOf(80L,-80L))"
 )
 
-private val byteListExamples = listOf(
+val byteListExamples = listOf(
     "listOf<Byte>()",
     "listOf(0.toByte())",
     "listOf(5.toByte())",
     "listOf((-5).toByte())",
     "listOf(80.toByte(),(-80).toByte()))"
 )
-private val shortListExamples = listOf(
+val shortListExamples = listOf(
     "listOf<Short>()",
     "listOf(0.toShort())",
     "listOf(5.toShort())",
@@ -428,35 +428,35 @@ private val shortListExamples = listOf(
 //endregion
 
 //region array data
-private val stringArrayExamples = listOf(
+val stringArrayExamples = listOf(
     "arrayOf<String>()",
     "arrayOf(\"\")",
     "arrayOf(\"a\")",
     "arrayOf(\"a\",\"b\")"
 )
 
-private val intArrayExamples = listOf(
+val intArrayExamples = listOf(
     "arrayOf<Int>()",
     "arrayOf(0)",
     "arrayOf(-1)",
     "arrayOf(1,2)"
 )
 
-private val charArrayExamples = listOf(
+val charArrayExamples = listOf(
     "arrayOf<Char>()",
     "arrayOf(' ')",
     "arrayOf('a')",
     "arrayOf('a','b')"
 )
 
-private val booleanArrayExamples = listOf(
+val booleanArrayExamples = listOf(
     "arrayOf<Boolean>()",
     "arrayOf(false)",
     "arrayOf(true)",
     "arrayOf(false,true)"
 )
 
-private val floatArrayExamples = listOf(
+val floatArrayExamples = listOf(
     "arrayOf<Float>()",
     "arrayOf(0f)",
     "arrayOf(1f)",
@@ -464,7 +464,7 @@ private val floatArrayExamples = listOf(
     "arrayOf(5f,-5f)"
 )
 
-private val doubleArrayExamples = listOf(
+val doubleArrayExamples = listOf(
     "arrayOf<Double>()",
     "arrayOf(0.toDouble())",
     "arrayOf(5.toDouble())",
@@ -472,7 +472,7 @@ private val doubleArrayExamples = listOf(
     "arrayOf(80.toDouble(),(-80).toDouble()))"
 )
 
-private val longArrayExamples = listOf(
+val longArrayExamples = listOf(
     "arrayOf<Long>()",
     "arrayOf(0L)",
     "arrayOf(5L)",
@@ -480,14 +480,14 @@ private val longArrayExamples = listOf(
     "arrayOf(80L,-80L))"
 )
 
-private val byteArrayExamples = listOf(
+val byteArrayExamples = listOf(
     "arrayOf<Byte>()",
     "arrayOf(0.toByte())",
     "arrayOf(5.toByte())",
     "arrayOf((-5).toByte())",
     "arrayOf(80.toByte(),(-80).toByte()))"
 )
-private val shortArrayExamples = listOf(
+val shortArrayExamples = listOf(
     "arrayOf<Short>()",
     "arrayOf(0.toShort())",
     "arrayOf(5.toShort())",

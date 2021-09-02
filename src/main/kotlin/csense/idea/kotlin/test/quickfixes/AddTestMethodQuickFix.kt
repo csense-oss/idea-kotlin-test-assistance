@@ -5,10 +5,7 @@ import com.intellij.openapi.project.*
 import com.intellij.psi.*
 import csense.idea.base.bll.psi.*
 import csense.idea.kotlin.test.bll.*
-import csense.idea.kotlin.test.bll.testGeneration.KtNamedFunctionTestData
-import csense.idea.kotlin.test.bll.testGeneration.computeMostViableSimpleTestData
-import csense.idea.kotlin.test.bll.testGeneration.safeFunctionName
-import csense.idea.kotlin.test.settings.*
+import csense.idea.kotlin.test.bll.testGeneration.*
 import org.jetbrains.kotlin.idea.util.application.*
 import org.jetbrains.kotlin.psi.*
 
@@ -41,21 +38,18 @@ class AddTestMethodQuickFix(
 
         val ktPsiFactory = KtPsiFactory(project)
 
+        //TODO from settings container
+        val assertionType = TestAssertionType.Csense
         val code = KtNamedFunctionTestData.computeMostViableSimpleTestData(
             function = fnc,
             testName = safeTestName,
-            createAssertStatements = SettingsContainer.shouldGenerateAssertStatements
+            assertion = assertionType
         )
         val codePsi: PsiElement = if (code.startsWith("class")) {
             ktPsiFactory.createClass(code)
         } else {
             ktPsiFactory.createFunction(code)
         }
-//        val code = fnc.computeMostViableSimpleTestData(
-//            safeTestName,
-//            ktPsiFactory,
-//            SettingsContainer.shouldGenerateAssertStatements
-//        )
 
         project.executeWriteCommand("update test class") {
             try {

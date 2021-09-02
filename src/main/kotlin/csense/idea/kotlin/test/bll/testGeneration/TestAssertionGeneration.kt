@@ -1,22 +1,41 @@
 package csense.idea.kotlin.test.bll.testGeneration
 
-import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtTypeReference
 
 
-fun String.generateTestAssertions(
+fun TestCode.generateTestAssertions(
     assertionType: AssertionType
 ): String {
-    if (assertionType == AssertionType.None) {
-        return this
+    //TODO read from settings
+    val testType = TestAssertionType.Csense
+    return when (testType) {
+        TestAssertionType.Junit -> assertionType.generateTestAssertionsForJunit(this.testCode, this.expectedResult)
+        TestAssertionType.Csense -> assertionType.generateTestAssertionsForCsense(this.testCode, this.expectedResult)
+        else -> testCode
     }
-    //TODO handle types, but in a Polymorphic way
-    //csense
-    val assertion = when (assertionType) {
-        AssertionType.Equality -> ".assert()"
-        else -> ".assertContains()"
+}
+
+enum class TestAssertionType {
+    Csense,
+    Junit,
+    None
+}
+
+fun AssertionType.generateTestAssertionsForCsense(testCode: String, expected: String): String {
+    val assertion = when (this) {
+        AssertionType.Equality -> ".assert($expected)"
+        AssertionType.Contains -> ".assertContains($expected)"
+        AssertionType.None -> ""
     }
-    return "${this}${assertion}"
+    return "${testCode}${assertion}"
+}
+
+fun AssertionType.generateTestAssertionsForJunit(testCode: String, expected: String): String {
+    return when (this) {
+        AssertionType.Equality -> "Assertions.assertEquals($expected, $testCode)"
+        AssertionType.Contains -> "Assertions.assertIterableEquals($expected, $testCode)"
+        AssertionType.None -> ""
+    }
 }
 
 sealed class AssertionType {
