@@ -1,6 +1,6 @@
 plugins {
     id("org.jetbrains.intellij") version "1.1.4"
-    kotlin("jvm") version "1.5.30-RC"
+    kotlin("jvm") version "1.5.30"
     java
     id("org.owasp.dependencycheck") version "6.2.2"
 }
@@ -31,13 +31,15 @@ dependencies {
 
 
 tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml") {
-    changeNotes.set("""
+    changeNotes.set(
+        """
       <ul>
         <li>More improvements / exception fixes</li>
         <li>Coverage now respects suppression</li>
         <li>Coverage now ignores anonymous classes</li>
       </ul>
-      """)
+      """
+    )
 }
 
 
