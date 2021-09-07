@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "csense-idea"
-version = "0.280"
+version = "0.300"
 
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/

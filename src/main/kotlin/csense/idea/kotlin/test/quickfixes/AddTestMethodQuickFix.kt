@@ -56,7 +56,7 @@ class AddTestMethodQuickFix(
                 val body = whereToWrite.getOrCreateBody()
                 body.addBefore(codePsi, body.lastChild)
             } catch (e: Throwable) {
-                TODO("Add error handling here")
+                throw e
             }
         }
     }
