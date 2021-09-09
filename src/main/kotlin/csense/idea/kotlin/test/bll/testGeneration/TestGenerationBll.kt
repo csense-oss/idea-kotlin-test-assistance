@@ -9,82 +9,10 @@ import csense.kotlin.extensions.primitives.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 
-//
-//fun KtNamedFunction.computeMostViableSimpleTestData(
-//    safeTestName: String,
-//    ktPsiFactory: KtPsiFactory,
-//    createAssertStatements: Boolean = false
-//): PsiElement {
-//    val receiverTypeReference = receiverTypeReference
-//    val typeToGuessOpt: KtTypeReference? = if (receiverTypeReference != null && valueParameters.isEmpty()) {
-//        receiverTypeReference
-//    } else if (valueParameters.size == 1 && receiverTypeReference == null) {
-//        valueParameters.firstOrNull()?.typeReference
-//    } else {
-//        if (receiverTypeReference != null && receiverTypeReference.text.isTypeProperlyAListType()) {
-//            return ktPsiFactory.createClass(
-//                computeListTestCode(
-//                    safeTestName.capitalize(),
-//                    "String",
-//                    FunctionInvocationPattern.Method(name ?: "", "", clz)
-//                )
-//            )
-//        }
-//        return "".wrapInAsFunction(safeTestName.decapitalize(), ktPsiFactory)
-//    }
-//
-//    val code = handleOuterType(typeToGuessOpt, isTopLevel, true, safeTestName)
-//    val rt = this.getDeclaredReturnType()
-//    val isUnit = rt == null || (rt is KtClassOrObject) && rt.isUnit()
-//    val codeWithAssert = if (createAssertStatements && code.result.isNotEmpty() && !isUnit) {
-//        val bestAssertType = computeBestAssertCsense(this)
-//        code.result.lines().joinToString("\n") { "$it.$bestAssertType" }
-//    } else {
-//        code.result
-//    }
-//    return if (code.isClass) {
-//        KtPsiFactory(project).createClass(code.result)
-//    } else {
-//        codeWithAssert.wrapInAsFunction(safeTestName.decapitalize(), ktPsiFactory)
-//    }
-//}
-
 fun KtClassOrObject.isUnit(): Boolean {
     val name = fqName?.asString()
     return name == "kotlin.Unit"
 }
-//
-//fun computeBestAssertCsense(ktNamedFunction: KtNamedFunction): String {
-//    val default = "assert()"
-//    val returnType = ktNamedFunction.getDeclaredReturnType() as? PsiNamedElement
-//    val name = returnType?.name ?: ""
-//    if (returnType is KtClass) {
-//        if (returnType.isEnum()) {
-//            val enumName: String = returnType.getEnumValues().firstOrNull()?.name ?: ""
-//            return "assert($name.$enumName)"
-//        } else if (returnType.isSealed()) {
-//            val clzFirst = returnType.findSealedClassInheritors().firstOrNull()
-//            val containsSuperClassName = clzFirst?.isClassContainedIn(name) ?: false
-//            val containing = containsSuperClassName.map("$name.", "")
-//            return "assert($containing${clzFirst?.name ?: ""}())"
-//        }
-//    }
-//
-//    if (name in setOf("List", "Map", "MutableList", "MutableMap", "Set", "MutableSet")) {
-//        return "assertContains()"
-//    }
-//
-//    return when (name) {
-//        "String" -> "assert(\"expected\")"
-//        "Integer" -> "assert(0)"
-//        "Boolean" -> "assertFalse()"
-//        "Double" -> "assert(0.0)"
-//        "Float" -> "assert(0f)"
-//        "Long" -> "assert(0L)"
-//        "Character" -> "assert('0')"
-//        else -> default
-//    }
-//}
 
 fun PsiClass.isClassContainedIn(containingName: String): Boolean {
     return getKotlinFqNameString()?.contains(".$containingName.") ?: false
@@ -270,19 +198,6 @@ fun convertListToRealCode(
 }
 
 
-fun String.safeFunctionName(): String {
-    return replace("?", "")
-        .replace("<", "")
-        .replace(">", "")
-        .replace(".", "")
-        .replace(",", "")
-        .replace(" ", "")
-        .replace("*", "")
-}
-
-fun String.safeDecapitizedFunctionName(): String {
-    return decapitalize().safeFunctionName()
-}
 
 //region primitive data
 val stringExamples = listOf(

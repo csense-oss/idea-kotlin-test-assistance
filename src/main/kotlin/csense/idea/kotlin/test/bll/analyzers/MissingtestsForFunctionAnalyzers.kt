@@ -4,8 +4,6 @@ import com.intellij.codeInspection.*
 import com.intellij.psi.*
 import csense.idea.base.bll.kotlin.*
 import csense.idea.kotlin.test.bll.*
-import csense.idea.kotlin.test.bll.testGeneration.safeDecapitizedFunctionName
-import csense.idea.kotlin.test.bll.testGeneration.safeFunctionName
 import csense.idea.kotlin.test.quickfixes.*
 import org.jetbrains.kotlin.idea.refactoring.*
 import org.jetbrains.kotlin.psi.*
@@ -62,7 +60,8 @@ object MissingtestsForFunctionAnalyzers {
                         "There are no test file",
                         arrayOf(
                             CreateTestFileQuickFix(
-                                testModule, resultingDirectory,
+                                testModule,
+                                resultingDirectory,
                                 containingFile
                             )
                         )
@@ -82,7 +81,7 @@ object MissingtestsForFunctionAnalyzers {
             ) == true
 
             if (!haveTestOfMethod) {
-                val fileName = containingFile.virtualFile.nameWithoutExtension
+                val fileName = containingFile.virtualFile.nameWithoutExtension.safeClassName()
                 val fixes: Array<LocalQuickFix>
                 if (safeContainingClass?.isCompanion() == true) {
                     val parentTestClass = testFile?.findMostSuitableTestClass(
@@ -223,7 +222,7 @@ fun KtNamedFunction.firstParameterTypeCapOrEmpty(): String {
 
 fun KtNamedFunction.computeViableNames(): List<String> {
     val overLoads = haveOverloads()
-    val safeName = name ?: ""
+    val safeName = name?.safeFunctionName() ?: ""
 
     val regularNames = if (overLoads) {
         //overloads opens up 2 things

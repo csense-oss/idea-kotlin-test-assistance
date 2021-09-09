@@ -5,7 +5,6 @@ import com.intellij.openapi.project.*
 import com.intellij.psi.*
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.bll.testGeneration.computeMostViableSimpleTestData
-import csense.idea.kotlin.test.bll.testGeneration.safeFunctionName
 import org.jetbrains.kotlin.idea.util.application.*
 import org.jetbrains.kotlin.psi.*
 

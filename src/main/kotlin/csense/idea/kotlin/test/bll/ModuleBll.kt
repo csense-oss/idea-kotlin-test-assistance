@@ -36,7 +36,11 @@ fun String.computeTestFileNames(): List<String> {
         this + "Test",
         this + "KtTest",
         this + "KtTests",
-        this + "Tests"
+        this + "Tests",
+        this.safeClassName() + "Test",
+        this.safeClassName() + "KtTest",
+        this.safeClassName() + "KtTests",
+        this.safeClassName() + "Tests",
     )
 }
 
@@ -68,7 +72,7 @@ fun KtClass.findMostSuitableTestClass(forClass: KtClassOrObject?, fileName: Stri
 private fun KtElement.findMostSuitableTestClassPrivate(forClass: KtClassOrObject?, fileName: String): KtClassOrObject? {
     return findDescendantOfType { classOrObject: KtClassOrObject ->
         if (forClass != null && forClass.isCompanion()) {
-            classOrObject.name
+            classOrObject.name //todo what the...
         }
         forClass?.name?.let { ourClass ->
             classOrObject.name?.startsWith(ourClass, true)

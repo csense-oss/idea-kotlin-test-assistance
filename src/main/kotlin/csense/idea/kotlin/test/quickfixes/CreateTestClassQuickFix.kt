@@ -3,13 +3,14 @@ package csense.idea.kotlin.test.quickfixes
 import com.intellij.codeInspection.*
 import com.intellij.openapi.project.*
 import com.intellij.psi.*
+import csense.idea.kotlin.test.bll.*
 import org.jetbrains.kotlin.psi.*
 
 class CreateTestClassQuickFix(
     className: String,
     testFile: KtFile
 ) : LocalQuickFixOnPsiElement(testFile) {
-    private val correctedClassName: String = className.capitalize()
+    private val correctedClassName: String = className.capitalize().safeClassName()
     override fun getFamilyName(): String {
         return this::class.java.simpleName
     }

@@ -5,6 +5,7 @@ import com.intellij.openapi.project.*
 import com.intellij.psi.*
 import com.intellij.util.*
 import csense.idea.base.module.*
+import csense.idea.kotlin.test.bll.*
 import org.jetbrains.kotlin.psi.*
 import java.io.*
 
@@ -26,8 +27,8 @@ class CreateTestFileQuickFix(
     override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
         val newClass = KtPsiFactory(project)
         val packageName = ktFile.packageFqName.asString()
-        val className = ktFile.virtualFile.nameWithoutExtension.capitalize() + "Test"
-        val fileName = "$className.kt"
+        val className = ktFile.virtualFile.nameWithoutExtension.capitalize().safeClassName() + "Test"
+        val fileName = ktFile.virtualFile.nameWithoutExtension.capitalize() + "Test.kt"
         val dir: PsiDirectory = resultingDirectory ?: (rootDir.createPackageFolders(packageName) ?: return)
         try {
             //if the file was already created
@@ -36,7 +37,9 @@ class CreateTestFileQuickFix(
             }
             val file = dir.createFile(fileName)
 //            file.add(newClass.createAnnotationEntry("@file:Suppress(\"unused\")")) //causes null ptr exceptions ?
-            file.add(newClass.createPackageDirective(ktFile.packageFqName))
+            if (ktFile.packageFqName.asString().isNotEmpty()) {
+                file.add(newClass.createPackageDirective(ktFile.packageFqName))
+            }
             file.add(newClass.createClass("class $className{\n}"))
         } catch (e: IncorrectOperationException) {
             throw e

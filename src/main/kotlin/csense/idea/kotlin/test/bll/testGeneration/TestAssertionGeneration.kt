@@ -3,18 +3,6 @@ package csense.idea.kotlin.test.bll.testGeneration
 import org.jetbrains.kotlin.psi.KtTypeReference
 
 
-fun TestCode.generateTestAssertions(
-    assertionType: AssertionType
-): String {
-    //TODO read from settings
-    val testType = TestAssertionType.Csense
-    return when (testType) {
-        TestAssertionType.Junit -> assertionType.generateTestAssertionsForJunit(this.testCode, this.expectedResult)
-        TestAssertionType.Csense -> assertionType.generateTestAssertionsForCsense(this.testCode, this.expectedResult)
-        else -> testCode
-    }
-}
-
 enum class TestAssertionType {
     Csense,
     Junit,

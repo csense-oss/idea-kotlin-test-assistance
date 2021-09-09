@@ -5,6 +5,7 @@ import com.intellij.psi.search.searches.*
 import csense.idea.base.*
 import csense.idea.base.bll.kotlin.*
 import csense.idea.base.bll.psi.*
+import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.bll.testGeneration.KtNamedFunctionTestData.computeTestCreationLookup
 import csense.kotlin.extensions.*
 import csense.kotlin.extensions.collections.list.*

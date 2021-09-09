@@ -5,7 +5,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import csense.idea.base.bll.kotlin.*
 import csense.idea.kotlin.test.bll.*
-import csense.idea.kotlin.test.bll.testGeneration.safeDecapitizedFunctionName
 import csense.idea.kotlin.test.quickfixes.*
 import org.jetbrains.kotlin.idea.refactoring.*
 import org.jetbrains.kotlin.psi.*
