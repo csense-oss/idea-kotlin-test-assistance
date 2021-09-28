@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalContracts::class)
+
 package csense.idea.kotlin.test.bll.testGeneration
 
 import com.intellij.psi.*
@@ -13,6 +15,7 @@ import csense.kotlin.specificExtensions.string.*
 import org.jetbrains.kotlin.asJava.*
 import org.jetbrains.kotlin.idea.quickfix.createFromUsage.callableBuilder.*
 import org.jetbrains.kotlin.psi.*
+import kotlin.contracts.*
 
 object KtNamedFunctionTestData {
     fun computeMostViableSimpleTestData(
@@ -110,16 +113,16 @@ object KtNamedFunctionTestData {
         allParameters: List<TestCreationParameter>,
         assertion: TestAssertionType
     ): String { //TODO list instead, such that lists can create multiple fun's?
-        val parametersForType: List<String> = typeToVary.lookup().parameters
+        val parametersForType: List<String> = typeToVary.lookup(setOf())?.parameters ?: listOf()
         val invocation = function.toFunctionInvocationPattern() ?: return ""
         val parameters: List<String> = allParameters.map {
-            it.lookup().emptyParameter
+            it.lookup(setOf())?.emptyParameter ?: ""
         }
 
 
         val returnType = function.getReturnTypeReference()
         val expectedEmpty = returnType?.let {
-            TestCreationParameter("", it).lookup().emptyParameter
+            TestCreationParameter("", it).lookup(setOf())?.emptyParameter ?: ""
         } ?: ""
 
         val testName = function.nameAsSafeName.asString().safeFunctionName()
@@ -165,7 +168,7 @@ object KtNamedFunctionTestData {
     }
 
 
-    fun KtTypeReference.lookup(): TestCreationLookup {
+    fun KtTypeReference.lookup(classesCasesToIgnore: Set<KtClassOrObject>): TestCreationLookup? {
         val resolved = resolve()
         val fqName = resolved?.getKotlinFqNameString()
         //default / primitives / hardcoded
@@ -175,7 +178,7 @@ object KtNamedFunctionTestData {
 
         //Lists & arrays, sets etc (not multiple types)
         val innerType = resolveListType()
-        val innerTypeLookedUp = innerType?.lookup()
+        val innerTypeLookedUp = innerType?.lookup(classesCasesToIgnore)
         if (innerType != null && innerTypeLookedUp != null) {
             getCollectionTypeWrapper()[fqName]?.let {
                 return@lookup innerTypeLookedUp.withWrapping(it.prefix, it.postfix)
@@ -185,24 +188,29 @@ object KtNamedFunctionTestData {
         if (resolved is KtClass) {
             return when {
                 resolved.isEnum() -> resolved.computeEnumToTestCreationLookup()
-                resolved.isSealed() -> resolved.computeSealedClassToTestCreationLook()
-                else -> resolved.computeTestCreationLookup()
+                resolved.isSealed() -> resolved.computeSealedClassToTestCreationLook(classesCasesToIgnore)
+                else -> resolved.computeTestCreationLookup(
+                    classesCasesToIgnore = classesCasesToIgnore
+                )
             }
         }
         return TestCreationLookup.empty
     }
 
 
-    fun TestCreationParameter.lookup(): TestCreationLookup {
-        return typeReference.lookup()
+    fun TestCreationParameter.lookup(classesCasesToIgnore: Set<KtClassOrObject>): TestCreationLookup? {
+        return typeReference.lookup(classesCasesToIgnore)
     }
 
-    fun KtClass.computeSealedClassToTestCreationLook(): TestCreationLookup {
+    fun KtClass.computeSealedClassToTestCreationLook(classesCasesToIgnore: Set<KtClassOrObject>): TestCreationLookup {
         val allClassCases = findSealedClassInheritors()
+        val casesToConsider = allClassCases.filter { it !in classesCasesToIgnore }
         //TODO improve this as well
-        val constructors: List<String> = allClassCases.map { ktClass: KtClassOrObject ->
-            val x = ktClass.computeTestCreationLookup(prefix = this.nameAsSafeName.asString())
-            x.emptyParameter
+        val constructors: List<String> = casesToConsider.mapNotNull { ktClass: KtClassOrObject ->
+            val x = ktClass.computeTestCreationLookup(
+                classesCasesToIgnore = classesCasesToIgnore.plus(ktClass)
+            )
+            x?.emptyParameter
         }
         val first = constructors.firstOrNull() ?: return TestCreationLookup.empty
         return TestCreationLookup(
@@ -216,19 +224,24 @@ object KtNamedFunctionTestData {
             .mapNotNull { it.navigationElement as? KtClassOrObject }
     }
 
-    fun KtClassOrObject.computeTestCreationLookup(prefix: String? = null): TestCreationLookup {
+    fun KtClassOrObject.computeTestCreationLookup(
+        classesCasesToIgnore: Set<KtClassOrObject>
+    ): TestCreationLookup? {
         if (this is KtClass) {
-            return computeTestCreationLookup(prefix)
+            return computeTestCreationLookup(classesCasesToIgnore)
         }
+
         //this is KtObject (if there ever was such a thing)
-        val name = prefix.mapOptional("$prefix.", "") + this.nameAsSafeName.asString()
+        val name = this.getKotlinFqNameString() ?: ""
         return TestCreationLookup(
             emptyParameter = name,
             parameters = listOf(name)
         )
     }
 
-    fun KtClass.computeTestCreationLookup(prefix: String? = null): TestCreationLookup {
+    fun KtClass.computeTestCreationLookup(
+        classesCasesToIgnore: Set<KtClassOrObject>
+    ): TestCreationLookup? {
         //TODO do all constructors
         val name = name
         val args = if (allConstructors.isEmpty()) {
@@ -237,20 +250,38 @@ object KtNamedFunctionTestData {
             val ctr = allConstructors.firstOrNull() ?: return TestCreationLookup.empty
             val args = ctr.valueParameters.map { parameter ->
                 val type = parameter.typeReference ?: return@computeTestCreationLookup TestCreationLookup.empty
-                TestCreationParameter(parameter.nameAsSafeName.asString(), type).lookup()
+
+                TestCreationParameter(parameter.nameAsSafeName.asString(), type).lookup(classesCasesToIgnore)
             }
             val argsAsString = args.joinToString(", ") { lookup ->
-                lookup.emptyParameter
+                lookup?.emptyParameter ?: ""
             }
             argsAsString
         }
 
-        val optPrefixString = prefix.mapOptional("$prefix.", "")
-        val code = "${optPrefixString}${nameAsSafeName.asString()}($args)"
+        val accessableName: String = computeAccessName()
+        val code = "${accessableName}($args)"
         return TestCreationLookup(
             emptyParameter = code,
             parameters = listOf(code)
         )
+    }
+
+    fun KtClassOrObject.computeAccessName(): String {
+        val name = name ?: ""
+        val classPathInverse = mutableListOf<String>()
+        foreachContainingClassOrObject {
+            classPathInverse += it.name ?: ""
+        }
+        return (classPathInverse.reversed() + name).joinToString(".")
+    }
+
+    fun KtClassOrObject.foreachContainingClassOrObject(onParent: (KtClassOrObject) -> Unit) {
+        var current: KtClassOrObject? = parent.findParentOfType()
+        while (current != null) {
+            onParent(current)
+            current = current.parent.findParentOfType()
+        }
     }
 
     fun KtClass.computeEnumToTestCreationLookup(): TestCreationLookup {
@@ -329,6 +360,10 @@ object KtNamedFunctionTestData {
                 prefix = "arrayOf(",
                 postfix = ")"
             ),
+            "kotlin.collections.Map" to CollectionTypeWrapper(
+                prefix = "mapOf(",
+                postfix = ")"
+            )
         )
     }
 //    TODO after dev do this instead
@@ -414,7 +449,7 @@ fun KtNamedFunction.toFunctionInvocationPattern(): FunctionInvocationPattern? {
 sealed class FunctionInvocationPattern(val name: String) {
     abstract fun toCode(parameters: List<String>): String
 
-    //TODO receiver function in class / object?
+    //TODO receiver function in class / object? wrap in "with(clz){method}"
     class ReceiverFunction(name: String) : FunctionInvocationPattern(name) {
         override fun toCode(parameters: List<String>): String {
             return "${parameters.first()}.$name(${
@@ -430,7 +465,9 @@ sealed class FunctionInvocationPattern(val name: String) {
         val clz: KtClassOrObject
     ) : FunctionInvocationPattern(name) {
         override fun toCode(parameters: List<String>): String {
-            val startup = clz.computeTestCreationLookup().emptyParameter
+            val startup = clz.computeTestCreationLookup(
+                classesCasesToIgnore = setOf()
+            )?.emptyParameter ?: ""
             return "$startup.$name(${parameters.joinToString(",")})"
         }
     }

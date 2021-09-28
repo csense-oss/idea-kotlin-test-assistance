@@ -4,9 +4,10 @@ package csense.idea.kotlin.test.bll
 
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiElement
-import csense.idea.base.bll.kotlin.isCompanion
+import csense.idea.base.bll.kotlin.*
 import csense.idea.base.bll.psi.countDescendantOfType
 import csense.idea.base.bll.psi.haveDescendantOfType
+import csense.kotlin.extensions.collections.*
 import csense.kotlin.extensions.collections.typed.contains
 import csense.kotlin.extensions.primitives.endsWithAny
 import csense.kotlin.extensions.primitives.startsWithAny
@@ -15,6 +16,7 @@ import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.findDescendantOfType
 import org.jetbrains.kotlin.psi.psiUtil.isPublic
+import sun.awt.image.*
 
 
 fun PsiDirectory.findTestFile(containingFile: KtFile): KtFile? {
@@ -45,20 +47,29 @@ fun String.computeTestFileNames(): List<String> {
 }
 
 fun KtFile.haveTestOfMethod(fnNames: List<String>, orgFile: KtFile, orgClass: KtClassOrObject?): Boolean {
+    return findTestOfMethodOrNull(fnNames, orgFile, orgClass).isNotEmpty()
+}
+
+fun KtFile.findTestOfMethodOrNull(
+    fnNames: List<String>,
+    orgFile: KtFile,
+    orgClass: KtClassOrObject?
+): List<PsiElement> {
     val publicClasses = orgFile.countDescendantOfType<KtClassOrObject> {
         it.isPublic
     }
-    return when {
+    val classes = when {
         publicClasses == 1 || publicClasses == 0 -> { //eg if there are only extensions there will be no public classes.
-            haveTestSingleClassOfMethodName(fnNames) || haveTestSingleClassObjectOfMethodName(fnNames)
+            getTestSingleClassOfMethodName(fnNames).nullOnEmpty() ?: getTestSingleClassObjectOfMethodName(fnNames)
         }
         publicClasses > 1 -> {
-            haveTestMultipleClassOfMethodName(fnNames, orgClass, orgFile.virtualFile.nameWithoutExtension)
+            getTestMultipleClassOfMethodName(fnNames, orgClass, orgFile.virtualFile.nameWithoutExtension)
         }
         else -> {
-            false
+            emptyList()
         }
     }
+    return classes
 }
 
 fun KtFile.findMostSuitableTestClass(forClass: KtClassOrObject?, fileName: String): KtClassOrObject? {
@@ -86,32 +97,46 @@ fun KtFile.haveTestMultipleClassOfMethodName(
     orgClass: KtClassOrObject?,
     fileName: String
 ): Boolean {
-    val validClass = findMostSuitableTestClass(orgClass, fileName) ?: return false
+    return getTestMultipleClassOfMethodName(fnNames, orgClass, fileName).isNotEmpty()
+}
 
-    return fnNames.any {
+fun KtFile.getTestMultipleClassOfMethodName(
+    fnNames: List<String>,
+    orgClass: KtClassOrObject?,
+    fileName: String
+): List<PsiElement> {
+    val validClass = findMostSuitableTestClass(orgClass, fileName) ?: return listOf()
+
+    return fnNames.mapNotNull {
         val functionNamesToFind = it.computeTestNames()
-        val didFindFunction = validClass.haveTestOfMethodNames(functionNamesToFind)
-        return@any didFindFunction || validClass.haveTestOfClassObjectOfMethodName(functionNamesToFind)
+        val didFindFunction = validClass.getTestByMethodNames(functionNamesToFind)
+        didFindFunction ?: validClass.getTestOfClassObjectOfMethodName(functionNamesToFind)
     }
 }
 
 fun KtFile.haveTestSingleClassOfMethodName(fnNames: List<String>): Boolean = fnNames.any { ourFunction ->
     val functionNamesToFind = ourFunction.computeTestNames()
-    haveTestOfMethodNames(functionNamesToFind)
+    getTestByMethodNames(functionNamesToFind) != null
 }
 
-fun PsiElement.haveTestOfMethodNames(functionNamesToFind: Set<String>): Boolean =
-    haveDescendantOfType<KtNamedFunction> {
-        val name = it.name ?: return@haveDescendantOfType false
+fun KtFile.getTestSingleClassOfMethodName(fnNames: List<String>): List<PsiElement> = fnNames.mapNotNull { ourFunction ->
+    val functionNamesToFind = ourFunction.computeTestNames()
+    getTestByMethodNames(functionNamesToFind)
+}
+
+fun PsiElement.getTestByMethodNames(functionNamesToFind: Set<String>): KtNamedFunction? {
+    return findDescendantOfType<KtNamedFunction> {
+        val name = it.name ?: return@findDescendantOfType false
         it.containingClassOrObject?.isTopLevel() == true &&
                 functionNamesToFind.contains(name, true)
     }
-
-
-fun KtFile.haveTestSingleClassObjectOfMethodName(fnNames: List<String>): Boolean = fnNames.any { ourFunction ->
-    val functionNamesToFind = ourFunction.computeTestNames()
-    haveTestOfClassObjectOfMethodName(functionNamesToFind)
 }
+
+fun KtFile.getTestSingleClassObjectOfMethodName(fnNames: List<String>): List<PsiElement> =
+    fnNames.mapNotNull { ourFunction ->
+        val functionNamesToFind = ourFunction.computeTestNames()
+        getTestOfClassObjectOfMethodName(functionNamesToFind)
+    }
 
 fun PsiElement.haveTestOfClassObjectOfMethodName(functionNamesToFind: Set<String>): Boolean {
     return haveDescendantOfType<KtClassOrObject> {
@@ -120,12 +145,12 @@ fun PsiElement.haveTestOfClassObjectOfMethodName(functionNamesToFind: Set<String
     }
 }
 
-//TODO "is kotlin file" ?
-fun KtFile.shouldIgnore(): Boolean {
-    return this.fileType != KotlinLanguage.INSTANCE.associatedFileType ||
-            !this.virtualFilePath.endsWithAny(".kt", ".kts")
+fun PsiElement.getTestOfClassObjectOfMethodName(functionNamesToFind: Set<String>): KtClassOrObject? {
+    return findDescendantOfType {
+        val name = it.name?.decapitalize() ?: return@findDescendantOfType false
+        functionNamesToFind.contains(name, true)
+    }
 }
-
 fun String.computeTestNames(): Set<String> {
     return setOf(
         this,

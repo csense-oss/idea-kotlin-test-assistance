@@ -21,7 +21,7 @@ object MissingTestsForPropertyAnalyzer {
             item.isProtected() ||
             item.isAbstract() ||
             !item.hasCustomSetterGetter() ||
-            containingKtFile.shouldIgnore() ||
+            containingKtFile.isNotKotlinFile() ||
             TestInformationCache.isFileInTestModuleOrSourceRoot(containingKtFile, project)
         ) {
             return AnalyzerResult.empty//ignore private & protected  methods / non kt files.

@@ -30,7 +30,7 @@ object MissingTestsForClassAnalyzer {
             ourClass.isCompanion() ||
             ourClass.isAbstract() ||
             ourClass.isSealed() ||
-            containingKtFile.shouldIgnore()
+            containingKtFile.isNotKotlinFile()
         ) {
             //skip companion objects / non kt files.
             return AnalyzerResult(errors)

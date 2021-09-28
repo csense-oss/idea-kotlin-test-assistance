@@ -22,6 +22,10 @@
     <extensions defaultExtensionNs="com.intellij">
         <inspectionToolProvider
                 implementation="csense.idea.kotlin.test.inspections.InspectionsProvider"/>
+        <codeInsight.lineMarkerProvider
+                language="kotlin"
+                implementationClass="csense.idea.kotlin.test.testNavigation.TestNavigationProvider"/>
+
         <toolWindow id="Kotlin test coverage" icon="/icons/toolwindow.png" anchor="right"
                     factoryClass="csense.idea.kotlin.test.toolwindow.CoverageToolWindowFactory"/>
 

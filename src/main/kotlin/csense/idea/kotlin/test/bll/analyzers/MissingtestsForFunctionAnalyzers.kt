@@ -19,7 +19,7 @@ object MissingtestsForFunctionAnalyzers {
         if (ourFunction.isPrivate() ||
             ourFunction.isProtected() ||
             ourFunction.isAbstract() ||
-            containingKtFile.shouldIgnore() ||
+            containingKtFile.isNotKotlinFile() ||
             TestInformationCache.isFileInTestModuleOrSourceRoot(containingKtFile, project)
         ) {
             return AnalyzerResult.empty//ignore private & protected  methods / non kt files.
@@ -28,7 +28,6 @@ object MissingtestsForFunctionAnalyzers {
 
         val timeInMs = measureTimeMillis {
             val parent = ourFunction.containingClassOrObject?.namedClassOrObject()
-            val containingFile = ourFunction.containingKtFile
             //skip anonymous classes' function(s)
             if (parent != null && parent.isAnonymous()) {
                 return@analyze AnalyzerResult(errors)
@@ -62,7 +61,7 @@ object MissingtestsForFunctionAnalyzers {
                             CreateTestFileQuickFix(
                                 testModule,
                                 resultingDirectory,
-                                containingFile
+                                containingKtFile
                             )
                         )
                     )
@@ -81,7 +80,7 @@ object MissingtestsForFunctionAnalyzers {
             ) == true
 
             if (!haveTestOfMethod) {
-                val fileName = containingFile.virtualFile.nameWithoutExtension.safeClassName()
+                val fileName = containingKtFile.virtualFile.nameWithoutExtension.safeClassName()
                 val fixes: Array<LocalQuickFix>
                 if (safeContainingClass?.isCompanion() == true) {
                     val parentTestClass = testFile?.findMostSuitableTestClass(
