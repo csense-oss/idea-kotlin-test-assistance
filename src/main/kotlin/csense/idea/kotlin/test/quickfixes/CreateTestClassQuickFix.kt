@@ -1,5 +1,6 @@
 package csense.idea.kotlin.test.quickfixes
 
+import com.intellij.codeInsight.daemon.*
 import com.intellij.codeInspection.*
 import com.intellij.openapi.project.*
 import com.intellij.psi.*
@@ -24,6 +25,7 @@ class CreateTestClassQuickFix(
         val factory = KtPsiFactory(project)
         val clz = factory.createClass("class ${correctedClassName}Test{\n}")
         testFile.add(clz)
+        DaemonCodeAnalyzer.getInstance(project).restart(file)
     }
 
 

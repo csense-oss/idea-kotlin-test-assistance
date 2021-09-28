@@ -1,5 +1,6 @@
 package csense.idea.kotlin.test.quickfixes
 
+import com.intellij.codeInsight.daemon.*
 import com.intellij.codeInspection.*
 import com.intellij.openapi.project.*
 import com.intellij.psi.*
@@ -42,5 +43,6 @@ class AddTestPropertyQuickFix(
                 TODO("Add error handling here")
             }
         }
+        DaemonCodeAnalyzer.getInstance(project).restart(file)
     }
 }

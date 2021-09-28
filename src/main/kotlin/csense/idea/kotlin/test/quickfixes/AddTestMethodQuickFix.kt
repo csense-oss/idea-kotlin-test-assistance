@@ -1,11 +1,13 @@
 package csense.idea.kotlin.test.quickfixes
 
+import com.intellij.codeInsight.daemon.*
 import com.intellij.codeInspection.*
 import com.intellij.openapi.project.*
 import com.intellij.psi.*
 import csense.idea.base.bll.psi.*
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.bll.testGeneration.*
+import csense.idea.kotlin.test.settings.*
 import org.jetbrains.kotlin.idea.util.application.*
 import org.jetbrains.kotlin.psi.*
 
@@ -38,8 +40,7 @@ class AddTestMethodQuickFix(
 
         val ktPsiFactory = KtPsiFactory(project)
 
-        //TODO from settings container
-        val assertionType = TestAssertionType.Csense
+        val assertionType = SettingsContainer.getTestAssertionType()
         val code = KtNamedFunctionTestData.computeMostViableSimpleTestData(
             function = fnc,
             testName = safeTestName,
@@ -59,5 +60,6 @@ class AddTestMethodQuickFix(
                 throw e
             }
         }
+        DaemonCodeAnalyzer.getInstance(project).restart(file)
     }
 }

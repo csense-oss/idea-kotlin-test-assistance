@@ -1,8 +1,18 @@
 package csense.idea.kotlin.test.settings
 
 import com.intellij.ide.util.*
+import csense.idea.kotlin.test.bll.testGeneration.*
+import csense.kotlin.extensions.*
 
 object SettingsContainer {
+    fun getTestAssertionType(): TestAssertionType {
+        return if (!shouldGenerateAssertStatements) {
+            TestAssertionType.None
+        } else {
+            generateAssertStatementOfName.toTestAssertionType()
+        }
+    }
+
     private const val settingsPrefixed = "CsenseKotlinTests"
 
     private val backend by lazy {
@@ -18,4 +28,8 @@ object SettingsContainer {
     var generateAssertStatementOfName: String
         get() = backend.getValue(generateAssertStatementOfNameName, "csense")
         set(value) = backend.setValue(generateAssertStatementOfNameName, value, "csense")
+}
+
+fun String.toTestAssertionType(): TestAssertionType {
+    return enumFromOrNull<TestAssertionType>(this) ?: TestAssertionType.None
 }

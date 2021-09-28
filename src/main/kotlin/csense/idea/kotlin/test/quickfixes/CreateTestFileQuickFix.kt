@@ -1,5 +1,6 @@
 package csense.idea.kotlin.test.quickfixes
 
+import com.intellij.codeInsight.daemon.*
 import com.intellij.codeInspection.*
 import com.intellij.openapi.project.*
 import com.intellij.psi.*
@@ -47,7 +48,7 @@ class CreateTestFileQuickFix(
             // we do not want to disturb the user, this is expected,
             // say the file exists and IDEA just have not updated the quickfix.
         }
-        return
+        DaemonCodeAnalyzer.getInstance(project).restart(ktFile)
     }
 
 }

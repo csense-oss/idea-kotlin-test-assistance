@@ -33,11 +33,21 @@ public class SettingsPaneUi {
                 didChange = true;
             }
         });
-        assertionTypeComboBox.addItem("Csense kotlin test");
+        assertionTypeComboBox.setSelectedItem(SettingsContainer.INSTANCE.getGenerateAssertStatementOfName());
+        assertionTypeComboBox.setAction(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                didChange = true;
+            }
+        });
     }
 
     public void store() {
         SettingsContainer.INSTANCE.setShouldGenerateAssertStatements(generateAssertionsCheckBox.isSelected());
+        Object selectedItem = assertionTypeComboBox.getSelectedItem();
+        if (selectedItem instanceof String) {
+            SettingsContainer.INSTANCE.setGenerateAssertStatementOfName((String) selectedItem);
+        }
     }
 
     @NotNull

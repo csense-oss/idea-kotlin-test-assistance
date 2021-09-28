@@ -11,6 +11,7 @@ import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.bll.testGeneration.KtNamedFunctionTestData.computeTestCreationLookup
 import csense.kotlin.extensions.*
 import csense.kotlin.extensions.collections.list.*
+import csense.kotlin.extensions.primitives.*
 import csense.kotlin.specificExtensions.string.*
 import org.jetbrains.kotlin.asJava.*
 import org.jetbrains.kotlin.idea.quickfix.createFromUsage.callableBuilder.*
@@ -49,15 +50,22 @@ object KtNamedFunctionTestData {
         inputTypesToCreateFor: List<TestCreationParameter>
     ): String {
         if (inputTypesToCreateFor.isEmpty()) {
-            return createFunction(testName = toTestName, tests = listOf(), assertion = assertion, expected = "")
+            return createFunction(
+                testName = toTestName,
+                tests = listOf(),
+                assertion = assertion,
+                expected = TestCreationLookup.empty
+            )
         }
+
         val functions = inputTypesToCreateFor.mapIndexed { index: Int, parameter: TestCreationParameter ->
             createTestCodeFor(
-                parameter,
-                index,
-                function,
-                inputTypesToCreateFor,
-                assertion
+                typeToVary = parameter,
+                typeToVaryIndex = index,
+                function = function,
+                allParameters = inputTypesToCreateFor,
+                assertion = assertion,
+                shouldUseTypeName = inputTypesToCreateFor.size > 1
             )
         }
         val singleFunction = functions.singleOrNull()
@@ -79,7 +87,7 @@ object KtNamedFunctionTestData {
         testName: String,
         tests: List<String>,
         assertion: TestAssertionType,
-        expected: String
+        expected: TestCreationLookup,
     ): String {
         val code = assertion.applyTo(tests, expected).joinToString("\n")
         return """
@@ -90,16 +98,35 @@ object KtNamedFunctionTestData {
         """
     }
 
-    fun TestAssertionType.applyTo(testCode: List<String>, expected: String): List<String> = testCode.map {
-        applyTo(it, expected)
+    fun TestAssertionType.applyTo(testCode: List<String>, expected: TestCreationLookup): List<String> =
+        testCode.mapIndexed { index, item ->
+            applyTo(item, expected, index)
+        }
+
+    fun TestAssertionType.applyTo(testCode: String, expected: TestCreationLookup, index: Int): String {
+        if (expected.emptyParameter.isEmpty()) {
+            return testCode
+        }
+
+        val isProperlyAComplexResultType =
+            expected.emptyParameter.contains("(") && expected.emptyParameter.contains(")")
+        return if (isProperlyAComplexResultType) {
+            val nameCounter = index.isPositive.map(ifTrue = index.toString(), ifFalse = "")
+            //expand expected / actual to variables
+            val variableTestCode = "val input$nameCounter = $testCode"
+            val variableExpected = "val expected$nameCounter = ${expected.emptyParameter}"
+            variableTestCode + "\n" + variableExpected + "\n" + applyTo(
+                testCode = "input$nameCounter",
+                expected = "expected$nameCounter"
+            )
+        } else {
+            applyTo(testCode, expected.emptyParameter)
+        }
+
     }
 
     fun TestAssertionType.applyTo(testCode: String, expected: String): String {
-        if (expected.isEmpty()) {
-            return testCode
-        }
         return when (this) {
-            //TODO improve
             TestAssertionType.Csense -> "$testCode.assert($expected)"
             TestAssertionType.Junit -> "assertEquals($expected,$testCode)"
             TestAssertionType.None -> testCode
@@ -111,7 +138,8 @@ object KtNamedFunctionTestData {
         typeToVaryIndex: Int,
         function: KtNamedFunction,
         allParameters: List<TestCreationParameter>,
-        assertion: TestAssertionType
+        assertion: TestAssertionType,
+        shouldUseTypeName: Boolean
     ): String { //TODO list instead, such that lists can create multiple fun's?
         val parametersForType: List<String> = typeToVary.lookup(setOf())?.parameters ?: listOf()
         val invocation = function.toFunctionInvocationPattern() ?: return ""
@@ -121,11 +149,16 @@ object KtNamedFunctionTestData {
 
 
         val returnType = function.getReturnTypeReference()
-        val expectedEmpty = returnType?.let {
-            TestCreationParameter("", it).lookup(setOf())?.emptyParameter ?: ""
-        } ?: ""
+        val expected = returnType?.let {
+            TestCreationParameter("", it).lookup(setOf())
+        } ?: TestCreationLookup.empty
 
-        val testName = function.nameAsSafeName.asString().safeFunctionName()
+
+        val testName = shouldUseTypeName.mapLazy(
+            ifTrue = { typeToVary.name.capitalize() },
+            ifFalse = { function.nameAsSafeName.asString().safeFunctionName() }
+        )
+
 
         val testCode = parametersForType.map {
             val updatedParameters = parameters.toMutableList()
@@ -151,13 +184,13 @@ object KtNamedFunctionTestData {
             createClassCode(
                 testName,
                 listOf(
-                    createFunction("empty", forEmpty, assertion, expectedEmpty),
-                    createFunction("single", forSingleTestCode, assertion, expectedEmpty),
-                    createFunction("multiple", testCode, assertion, expectedEmpty)
+                    createFunction("empty", forEmpty, assertion, expected),
+                    createFunction("single", forSingleTestCode, assertion, expected),
+                    createFunction("multiple", testCode, assertion, expected)
                 )
             )
         } else {
-            createFunction(testName, testCode, assertion, expectedEmpty)
+            createFunction(testName, testCode, assertion, expected)
         }
 
     }
@@ -333,6 +366,10 @@ object KtNamedFunctionTestData {
                 prefix = "listOf(",
                 postfix = ")"
             ),
+            "kotlin.collections.MutableList" to CollectionTypeWrapper(
+                prefix = "mutableListOf(",
+                postfix = ")"
+            ),
             "kotlin.collections.ArrayList" to CollectionTypeWrapper(
                 prefix = "listOf(",
                 postfix = ")"
@@ -362,6 +399,10 @@ object KtNamedFunctionTestData {
             ),
             "kotlin.collections.Map" to CollectionTypeWrapper(
                 prefix = "mapOf(",
+                postfix = ")"
+            ),
+            "kotlin.collections.MutableMap" to CollectionTypeWrapper(
+                prefix = "mutableMapOf(",
                 postfix = ")"
             )
         )
@@ -540,13 +581,4 @@ fun KtNullableType.resolveListType(): KtTypeReference? {
 
 fun KtTypeReference.isNullableType(): Boolean {
     return typeElement is KtNullableType
-}
-
-
-fun <T> T.applyIf(shouldApply: Boolean, function: (T) -> T): T {
-    return if (shouldApply) {
-        function(this)
-    } else {
-        this
-    }
 }
