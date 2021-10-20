@@ -1,10 +1,10 @@
 plugins {
     //https://plugins.gradle.org/plugin/org.jetbrains.intellij
-    id("org.jetbrains.intellij") version "1.1.6"
+    id("org.jetbrains.intellij") version "1.2.0"
     kotlin("jvm") version "1.5.31"
     java
     //https://github.com/jeremylong/DependencyCheck
-    id("org.owasp.dependencycheck") version "6.3.1"
+    id("org.owasp.dependencycheck") version "6.3.2"
 }
 
 group = "csense-idea"

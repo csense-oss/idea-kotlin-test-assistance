@@ -24,7 +24,10 @@
                 implementation="csense.idea.kotlin.test.inspections.InspectionsProvider"/>
         <codeInsight.lineMarkerProvider
                 language="kotlin"
-                implementationClass="csense.idea.kotlin.test.testNavigation.TestNavigationProvider"/>
+                implementationClass="csense.idea.kotlin.test.testNavigation.TestNavigationFunctionProvider"/>
+        <codeInsight.lineMarkerProvider
+                language="kotlin"
+                implementationClass="csense.idea.kotlin.test.testNavigation.TestNavigationVariableProvider"/>
 
         <toolWindow id="Kotlin test coverage" icon="/icons/toolwindow.svg" anchor="right"
                     factoryClass="csense.idea.kotlin.test.toolwindow.CoverageToolWindowFactory"/>

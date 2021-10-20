@@ -5,10 +5,19 @@ fun String.safeClassName(): String {
 }
 
 fun String.safeFunctionName(): String {
-    return safeNameDecl()
+    val safeName = safeNameDecl()
+    if (safeName in dangerousFunctionNames) {
+        return "${safeName}Test"
+    }
+    return safeName
 }
 
-fun String.safeNameDecl():String{
+private val dangerousFunctionNames = setOf(
+    "hashCode",
+    "toString"
+)
+
+fun String.safeNameDecl(): String {
     return replace("?", "")
         .replace("<", "")
         .replace(">", "")
@@ -19,6 +28,7 @@ fun String.safeNameDecl():String{
         .replace("+", "")
         .replace("-", "")
 }
+
 fun String.safeDecapitizedFunctionName(): String {
     return decapitalize().safeFunctionName()
 }
