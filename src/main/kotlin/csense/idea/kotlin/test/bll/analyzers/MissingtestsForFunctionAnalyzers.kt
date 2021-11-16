@@ -87,15 +87,13 @@ object MissingtestsForFunctionAnalyzers {
                         safeContainingClass.containingClass(),
                         fileName
                     )
-                    fixes = arrayOf()
-                    //TODO
-//                    fixes = createQuickFixesForCompanionFunction(
-//                        parentTestClass,
-//                        ourFunction,
-//                        resultingDirectory,
-//                        testModule,
-//                        testFile
-//                    )
+                    fixes = createQuickFixesForCompanionFunction(
+                        parentTestClass,
+                        ourFunction,
+                        resultingDirectory,
+                        testModule,
+                        testFile
+                    )
 
                 } else {
                     //TODO use file name if containing is null / empty.
@@ -156,6 +154,30 @@ object MissingtestsForFunctionAnalyzers {
                 testClass
             )
         )
+    }
+
+    fun createQuickFixesForCompanionFunction(
+        parentTestClass: KtClassOrObject?,
+        ourFunction: KtNamedFunction,
+        resultingDirectory: PsiDirectory?,
+        testModule: PsiDirectory,
+        testFile: KtFile?
+    ): Array<LocalQuickFix> {
+        if (testFile == null) {
+            return arrayOf(CreateTestFileQuickFix(testModule, resultingDirectory, ourFunction.containingKtFile))
+        }
+
+        if (parentTestClass == null) {
+            return arrayOf(
+                CreateCompanionTestClassQuickFix(
+                    ourFunction.containingClassOrObject?.namedClassOrObject()?.name
+                        ?: ourFunction.containingKtFile.virtualFile.nameWithoutExtension,
+                    testFile
+                )
+            )
+        }
+
+        return arrayOf()
     }
 
 //    fun createQuickFixesForCompanionFunction(
@@ -248,5 +270,5 @@ fun KtNamedFunction.computeViableNames(): List<String> {
     } else {
         listOf()
     }
-    return regularNames + extensions
+    return extensions + regularNames
 }
