@@ -20,6 +20,8 @@ import org.jetbrains.kotlin.idea.util.projectStructure.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 import java.text.*
+import java.util.concurrent.*
+import java.util.concurrent.atomic.*
 import javax.swing.*
 import javax.swing.event.*
 
@@ -167,22 +169,22 @@ class BackgroundableWrapper(
     val updateCallback: FunctionUnit<BackgroundAnalyzeResult>
 ) : Task.Backgroundable(project, title, true, PerformInBackgroundOption.DEAF) {
 
-    private var seenClasses = 0
-    private var testedClasses = 0
+    private var seenClasses = AtomicInteger(0)
+    private var testedClasses = AtomicInteger(0)
 
-    private var seenMethods = 0
-    private var testedMethods = 0
+    private var seenMethods = AtomicInteger(0)
+    private var testedMethods = AtomicInteger(0)
 
-    private var testedProperties = 0
-    private var seenProperties = 0
+    private var testedProperties = AtomicInteger(0)
+    private var seenProperties = AtomicInteger(0)
 
-    private var missingClassesFqPsi = mutableListOf<PsiElement>()
-    private var missingFunctionFqPsi = mutableListOf<PsiElement>()
-    private var missingPropertiesFqPsi = mutableListOf<PsiElement>()
+    private var missingClassesFqPsi = ConcurrentLinkedQueue<PsiElement>()
+    private var missingFunctionFqPsi = ConcurrentLinkedQueue<PsiElement>()
+    private var missingPropertiesFqPsi = ConcurrentLinkedQueue<PsiElement>()
 
-    private var skippedClassesFqPsi = mutableListOf<PsiElement>()
-    private var skippedFunctionFqPsi = mutableListOf<PsiElement>()
-    private var skippedPropertiesFqPsi = mutableListOf<PsiElement>()
+    private var skippedClassesFqPsi = ConcurrentLinkedQueue<PsiElement>()
+    private var skippedFunctionFqPsi = ConcurrentLinkedQueue<PsiElement>()
+    private var skippedPropertiesFqPsi = ConcurrentLinkedQueue<PsiElement>()
 
     override fun run(indicator: ProgressIndicator) {
         val fileIndex = ProjectFileIndex.SERVICE.getInstance(project)
@@ -208,15 +210,15 @@ class BackgroundableWrapper(
                 it.visit(fileIndex)
                 updateCallback(
                     BackgroundAnalyzeResult(
-                        seenClasses, testedClasses,
-                        seenMethods, testedMethods,
-                        seenProperties, testedProperties,
-                        missingClassesFqPsi,
-                        missingFunctionFqPsi,
-                        missingPropertiesFqPsi,
-                        skippedClassesFqPsi,
-                        skippedFunctionFqPsi,
-                        skippedPropertiesFqPsi
+                        seenClasses.get(), testedClasses.get(),
+                        seenMethods.get(), testedMethods.get(),
+                        seenProperties.get(), testedProperties.get(),
+                        missingClassesFqPsi.toList(),
+                        missingFunctionFqPsi.toList(),
+                        missingPropertiesFqPsi.toList(),
+                        skippedClassesFqPsi.toList(),
+                        skippedFunctionFqPsi.toList(),
+                        skippedPropertiesFqPsi.toList()
                     )
                 )
             }
@@ -242,46 +244,46 @@ class BackgroundableWrapper(
                 }
 
                 if (it.annotationEntries.containsSuppressionForMissingTest()) {
-                    seenClasses += 1
-                    testedClasses += 1
+                    seenClasses.incrementAndGet()
+                    testedClasses.incrementAndGet()
                     skippedClassesFqPsi.add(it)
                     return@forEach
                 }
 
                 val analyzeResult = MissingTestsForClassAnalyzer.analyze(it)
-                seenClasses += 1
+                seenClasses.incrementAndGet()
                 if (analyzeResult.errors.isEmpty()) {
-                    testedClasses += 1
+                    testedClasses.incrementAndGet()
                 } else {
                     missingClassesFqPsi.add(it)
                 }
             }
             ktFile.collectDescendantsOfType<KtNamedFunction>().forEach {
                 if (it.annotationEntries.containsSuppressionForMissingTest()) {
-                    seenMethods += 1
-                    testedMethods += 1
+                    seenMethods.incrementAndGet()
+                    testedMethods.incrementAndGet()
                     skippedFunctionFqPsi.add(it)
                     return@forEach
                 }
                 val analyzeResult = MissingtestsForFunctionAnalyzers.analyze(it, true)
-                seenMethods += 1
+                seenMethods.incrementAndGet()
                 if (analyzeResult.errors.isEmpty()) {
-                    testedMethods += 1
+                    testedMethods.incrementAndGet()
                 } else {
                     missingFunctionFqPsi.add(it)
                 }
             }
             ktFile.collectDescendantsOfType<KtProperty>().forEach {
                 if (it.annotationEntries.containsSuppressionForMissingTest()) {
-                    seenProperties += 1
-                    testedProperties += 1
+                    seenProperties.incrementAndGet()
+                    testedProperties.incrementAndGet()
                     skippedPropertiesFqPsi.add(it)
                     return@forEach
                 }
                 val analyzeResult = MissingTestsForPropertyAnalyzer.analyze(it)
-                seenProperties += 1
+                seenProperties.incrementAndGet()
                 if (analyzeResult.errors.isEmpty()) {
-                    testedProperties += 1
+                    testedProperties.incrementAndGet()
                 } else {
                     missingPropertiesFqPsi.add(it)
                 }

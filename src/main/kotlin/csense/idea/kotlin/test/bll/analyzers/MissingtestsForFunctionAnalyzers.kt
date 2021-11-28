@@ -167,15 +167,15 @@ object MissingtestsForFunctionAnalyzers {
             return arrayOf(CreateTestFileQuickFix(testModule, resultingDirectory, ourFunction.containingKtFile))
         }
 
-        if (parentTestClass == null) {
-            return arrayOf(
-                CreateCompanionTestClassQuickFix(
-                    ourFunction.containingClassOrObject?.namedClassOrObject()?.name
-                        ?: ourFunction.containingKtFile.virtualFile.nameWithoutExtension,
-                    testFile
-                )
-            )
-        }
+//        if (parentTestClass == null) {
+//            return arrayOf(
+//                CreateCompanionTestClassQuickFix(
+//                    ourFunction.containingClassOrObject?.namedClassOrObject()?.name
+//                        ?: ourFunction.containingKtFile.virtualFile.nameWithoutExtension,
+//                    testFile
+//                )
+//            )
+//        }
 
         return arrayOf()
     }
