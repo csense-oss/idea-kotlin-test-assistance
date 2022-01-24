@@ -36,3 +36,8 @@ in short
 
 # Better test code generation
     - eg strings (empty, whitespace, types of content etc) 
+
+
+# varargs should be like arrays / lists
+
+# Codegen for static functions should work.
