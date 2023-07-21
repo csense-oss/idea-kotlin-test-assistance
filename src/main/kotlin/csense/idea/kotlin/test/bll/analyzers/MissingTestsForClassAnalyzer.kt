@@ -5,8 +5,8 @@ import com.intellij.openapi.project.*
 import com.intellij.openapi.roots.*
 import com.intellij.openapi.vfs.*
 import com.intellij.psi.*
-import csense.idea.base.bll.*
 import csense.idea.base.bll.kotlin.*
+import csense.idea.base.bll.platform.*
 import csense.idea.base.bll.psi.*
 import csense.idea.base.module.*
 import csense.idea.kotlin.test.bll.*

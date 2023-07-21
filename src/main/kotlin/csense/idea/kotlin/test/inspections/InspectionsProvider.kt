@@ -1,6 +1,7 @@
 package csense.idea.kotlin.test.inspections
 
 import com.intellij.codeInspection.*
+import csense.idea.kotlin.test.inspections.emptyTest.*
 
 class InspectionsProvider : InspectionToolProvider {
     override fun getInspectionClasses(): Array<Class<out LocalInspectionTool>> {

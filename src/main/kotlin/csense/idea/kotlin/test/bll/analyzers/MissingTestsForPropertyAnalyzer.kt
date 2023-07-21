@@ -20,7 +20,7 @@ object MissingTestsForPropertyAnalyzer {
         if (item.isPrivate() ||
             item.isProtected() ||
             item.isAbstract() ||
-            !item.hasCustomSetterGetter() ||
+            !item.hasCustomSetterOrGetter() ||
             containingKtFile.isNotKotlinFile() ||
             TestInformationCache.isFileInTestModuleOrSourceRoot(containingKtFile, project)
         ) {

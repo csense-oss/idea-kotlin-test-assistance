@@ -1,5 +1,6 @@
 package csense.idea.kotlin.test.bll.analyzers
 
+import com.intellij.codeInsight.*
 import com.intellij.openapi.module.*
 import com.intellij.openapi.project.*
 import com.intellij.openapi.roots.*
@@ -7,13 +8,13 @@ import com.intellij.psi.*
 import csense.kotlin.datastructures.collections.*
 import org.jetbrains.kotlin.psi.*
 
+//TODO look into TestFrameworks (idea code)
 object TestInformationCache {
 
     fun isFileInTestModuleOrSourceRoot(file: PsiFile, project: Project): Boolean {
         isFileInTestModuleCache[file]?.let {
             return@isFileInTestModuleOrSourceRoot it
         }
-
         return ProjectFileIndex.SERVICE.getInstance(project).isInTestSourceContent(file.virtualFile).apply {
             isFileInTestModuleCache[file] = this
         }
@@ -32,4 +33,13 @@ object TestInformationCache {
 
     private val isFileInTestModuleCache = SimpleLRUCache<PsiFile, Boolean>(500)
     private val moduleToTestSourceRoot = SimpleLRUCache<Module, PsiDirectory?>(50)
+}
+
+
+fun PsiFile.isInTestModule(): Boolean {
+    return TestInformationCache.isFileInTestModuleOrSourceRoot(this, project)
+}
+
+fun PsiFile.isNotInTestModule(): Boolean {
+    return !isInTestModule()
 }

@@ -550,7 +550,7 @@ fun KtUserType.resolve(): PsiElement? {
     return referenceExpression
         ?.references?.firstOrNull()
         ?.resolve()
-        ?.mapIfInstance { it: KtTypeAlias ->
+        ?.mapIfInstanceOrThis { it: KtTypeAlias ->
             it.getTypeReference()?.resolve()
         }
 }
