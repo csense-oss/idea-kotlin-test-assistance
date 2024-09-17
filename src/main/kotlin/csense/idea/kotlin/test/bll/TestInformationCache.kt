@@ -77,15 +77,15 @@ fun Module.findMostPropableTestModule(): Module? {
         ?: validTestModules.selectBestCandidate(this)
 }
 
-fun Module.findMostProbableSourceModuleFromTest(): Module? {
-    val allModules: List<Module> = this.project.modules.asList()
-    val allTestModules: List<Module> = allModules.filter { it: Module -> it.isTestModule() }
-    val validTestModules: List<Module> = allTestModules.filter { it: Module ->
-        ModuleRootManager.getInstance(it).isDependsOn(this)
-    }
-    return validTestModules.selectByName(this)
-        ?: validTestModules.selectBestCandidate(this)
-}
+//fun Module.findMostProbableSourceModuleFromTest(): Module? {
+//    val allModules: List<Module> = this.project.modules.asList()
+//    val allTestModules: List<Module> = allModules.filter { it: Module -> it.isTestModule() }
+//    val validTestModules: List<Module> = allTestModules.filter { it: Module ->
+//        ModuleRootManager.getInstance(it).isDependsOn(this)
+//    }
+//    return validTestModules.selectByName(this)
+//        ?: validTestModules.selectBestCandidate(this)
+//}
 
 private fun List<Module>.selectByName(fromModule: Module): Module? {
     return firstOrNull { it: Module ->
@@ -132,5 +132,12 @@ fun Array<VirtualFile>.filterTestSourceRoots(project: Project): List<VirtualFile
     val inst: ProjectFileIndex = project.fileIndexService
     return filter { it: VirtualFile ->
         inst.isInTestSourceContent(it)
+    }
+}
+
+fun Array<VirtualFile>.filterSourceContent(project: Project): List<VirtualFile> {
+    val inst: ProjectFileIndex = project.fileIndexService
+    return filter { it: VirtualFile ->
+        inst.isInSourceContent(it)
     }
 }

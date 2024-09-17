@@ -29,6 +29,10 @@
 
         <codeInsight.lineMarkerProvider
                 language="kotlin"
+                implementationClass="csense.idea.kotlin.test.testNavigation.TestNavigationClassProvider"/>
+
+        <codeInsight.lineMarkerProvider
+                language="kotlin"
                 implementationClass="csense.idea.kotlin.test.testNavigation.TestedCodeNavigationFunctionProvider"/>
 
         <codeInsight.lineMarkerProvider

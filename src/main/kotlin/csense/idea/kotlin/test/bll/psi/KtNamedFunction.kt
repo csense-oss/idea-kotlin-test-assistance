@@ -8,6 +8,7 @@ import csense.idea.base.bll.psiWrapper.function.operations.*
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.bll.frameworks.*
 import csense.idea.kotlin.test.bll.search.*
+import csense.kotlin.extensions.collections.*
 import csense.kotlin.extensions.primitives.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
@@ -125,14 +126,18 @@ fun KtNamedFunction.getTests(): List<PsiElement> {
 
 fun KtNamedFunction.getTestedMethod(): List<PsiElement> {
     val containingKtFile: KtFile = containingKtFile
-    val testFile: KtFile = TestSearch.findCodeFromTestFile(containingKtFile) ?: return emptyList()
+    val testFiles: List<KtFile> = TestSearch.findCodeFromTestFile(containingKtFile) ?: return emptyList()
 
     val containingClass: KtClassOrObject? = containingClassOrObject?.namedClassOrObject()
-    return testFile.findCodeFromTestNameOrNull(
-        fnNames = computeViableCodeNames(),
-        orgFile = containingKtFile,
-        orgClass = containingClass
-    )
+
+    return testFiles.selectFirstOrNull { it: KtFile ->
+        it.findCodeFromTestNameOrNull(
+            fnNames = computeViableCodeNames(),
+            orgFile = containingKtFile,
+            orgClass = containingClass
+        )
+    } ?: emptyList()
+
 }
 
 
@@ -175,10 +180,18 @@ fun KtFile.findCodeFromTestNameOrNull(
     orgFile: KtFile,
     orgClass: KtClassOrObject?
 ): List<PsiElement> {
-    TODO()
-//    val publicClasses: Int = orgFile.countDescendantOfType<KtClassOrObject> { it: KtClassOrObject ->
-//        it.isPublic
-//    }
+    val matchingFunctions= collectDescendantsOfType<KtElement> { it: KtElement ->
+        it.name in fnNames
+    }
+    if(matchingFunctions.isNotEmpty()){
+        return matchingFunctions
+    }
+    val matchingClasses: List<KtClassOrObject> = collectDescendantsOfType<KtClassOrObject> { it.name == orgClass?.name?.removeTestCodeNames() }
+    if(matchingClasses.isNotEmpty()){
+        return matchingClasses
+    }
+    return emptyList()
+//    TODO()
 //    val classes: List<PsiElement> = when {
 //        publicClasses == 1 || publicClasses == 0 -> { //eg if there are only extensions there will be no public classes.
 //            getTestSingleClassOfMethodName(fnNames).nullOnEmpty() ?: getTestSingleClassObjectOfMethodName(fnNames)

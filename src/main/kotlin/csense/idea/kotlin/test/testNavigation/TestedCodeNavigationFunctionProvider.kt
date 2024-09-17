@@ -14,13 +14,15 @@ class TestedCodeNavigationFunctionProvider : LineMarkerProvider {
         if (!method.isInTestModule()) {
             return null
         }
+        return onTestNamedFunction(method)
+    }
 
+    private fun onTestNamedFunction(method: KtNamedFunction): NavigateToTestedCodeLineMarkerInfo? {
         val testMethod: List<PsiElement> = method.getTestedMethod()
         val firstTestMethod: PsiElement = testMethod.firstOrNull() ?: return null
         return NavigateToTestedCodeLineMarkerInfo(
             element = method,
             testMethod = firstTestMethod
         )
-
     }
 }

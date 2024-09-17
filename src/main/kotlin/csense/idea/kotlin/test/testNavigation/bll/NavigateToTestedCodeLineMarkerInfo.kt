@@ -18,7 +18,7 @@ class NavigateToTestedCodeLineMarkerInfo(
         "Navigate to corresponding code for test"
     },
     /* tooltipProvider = */ GutterIconNavigationHandler { _: MouseEvent,
-                                                           _: PsiElement ->
+                                                          _: PsiElement ->
         testMethod.tryNavigate(true)
     },
     /* navHandler = */ GutterIconRenderer.Alignment.LEFT,
