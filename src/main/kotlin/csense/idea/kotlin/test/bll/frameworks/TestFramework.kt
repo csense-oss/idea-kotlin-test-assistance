@@ -1,4 +1,4 @@
-package csense.idea.kotlin.test.bll.psi
+package csense.idea.kotlin.test.bll.frameworks
 
 import csense.kotlin.extensions.*
 

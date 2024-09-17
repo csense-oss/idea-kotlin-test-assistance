@@ -1,9 +1,8 @@
-package csense.idea.kotlin.test.inspections
+package csense.idea.kotlin.test.inspections.missingTestsForProperty
 
 import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
 import csense.idea.kotlin.test.bll.*
-import csense.idea.kotlin.test.bll.analyzers.*
 import org.jetbrains.kotlin.idea.inspections.*
 import org.jetbrains.kotlin.psi.*
 
@@ -41,10 +40,10 @@ class MissingTestsForPropertyInspector : AbstractKotlinInspection() {
         isOnTheFly: Boolean
     ): KtVisitorVoid {
         return propertyVisitor { prop ->
-            val result = MissingTestsForPropertyAnalyzer.analyze(prop)
-            result.errors.forEach {
-                holder.registerProblem(it)
-            }
+//            val result = MissingTestsForPropertyAnalyzer.analyze(prop)
+//            result.errors.forEach {
+//                holder.registerProblem(it)
+//            }
 
         }
     }

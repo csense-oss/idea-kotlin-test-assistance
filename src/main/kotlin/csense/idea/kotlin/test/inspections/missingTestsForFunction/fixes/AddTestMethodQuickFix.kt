@@ -1,4 +1,4 @@
-package csense.idea.kotlin.test.quickfixes
+package csense.idea.kotlin.test.inspections.missingTestsForFunction.fixes
 
 import com.intellij.codeInsight.daemon.*
 import com.intellij.codeInspection.*
@@ -60,6 +60,7 @@ class AddTestMethodQuickFix(
                 throw e
             }
         }
+
         DaemonCodeAnalyzer.getInstance(project).restart(file)
     }
 }

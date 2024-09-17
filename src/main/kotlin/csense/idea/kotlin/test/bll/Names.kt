@@ -1,5 +1,7 @@
 package csense.idea.kotlin.test.bll
 
+import java.util.*
+
 fun String.safeClassName(): String {
     return safeNameDecl()
 }
@@ -30,5 +32,5 @@ fun String.safeNameDecl(): String {
 }
 
 fun String.safeDecapitizedFunctionName(): String {
-    return decapitalize().safeFunctionName()
+    return replaceFirstChar { it.lowercase(Locale.getDefault()) }.safeFunctionName()
 }

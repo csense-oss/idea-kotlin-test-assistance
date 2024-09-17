@@ -30,3 +30,4 @@ local.properties
 *.kotlin_module
 *.js
 *.kjsm
+.kotlin/

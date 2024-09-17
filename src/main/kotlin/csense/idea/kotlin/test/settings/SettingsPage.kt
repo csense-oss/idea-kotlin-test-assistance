@@ -12,11 +12,11 @@ class SettingsPage : SearchableConfigurable {
     }
 
     override fun getId(): String {
-        return "csenseKotlinCheckedExceptionsSettingsPage"
+        return "csenseKotlinTestAssistance"
     }
 
     override fun getDisplayName(): String {
-        return "Csense - Kotlin Checked exceptions"
+        return "Csense - Kotlin Test Assistant"
     }
 
     override fun apply() {

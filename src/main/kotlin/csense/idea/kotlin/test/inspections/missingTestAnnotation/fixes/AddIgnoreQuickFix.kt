@@ -1,4 +1,4 @@
-package csense.idea.kotlin.test.inspections.emptyTest.fixes
+package csense.idea.kotlin.test.inspections.missingTestAnnotation.fixes
 
 import com.intellij.openapi.project.*
 import com.intellij.psi.*
@@ -10,15 +10,15 @@ import org.jetbrains.kotlin.idea.util.application.*
 import org.jetbrains.kotlin.name.*
 import org.jetbrains.kotlin.psi.*
 
-class AddIgnoreQuickFix(
+class AddTestAnnotationQuickFix(
     onFunction: KtNamedFunction,
     @Suppress("ActionIsNotPreviewFriendly")
     private val framework: TestFramework
 ) : LocalQuickFixOnSingleKtElement<KtNamedFunction>(onFunction) {
 
     override fun invoke(project: Project, file: PsiFile, element: KtNamedFunction) {
-        project.executeWriteCommand(AddIgnoreQuickFix::class.java.simpleName) {
-            element.addAnnotation(FqName(framework.ignoreFqName))
+        project.executeWriteCommand(AddTestAnnotationQuickFix::class.java.simpleName) {
+            element.addAnnotation(FqName(framework.testFqName))
         }
     }
 
@@ -27,6 +27,6 @@ class AddIgnoreQuickFix(
     }
 
     override fun getText(): String {
-        return "Add ignore to test method"
+        return "Mark method as a test"
     }
 }

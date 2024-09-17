@@ -8,17 +8,13 @@ import com.intellij.openapi.roots.*
 import com.intellij.openapi.vfs.*
 import com.intellij.psi.*
 import com.intellij.psi.impl.*
-import csense.idea.base.bll.kotlin.isAnonymous
 import csense.idea.base.bll.psi.*
 import csense.idea.base.module.*
-import csense.idea.kotlin.test.bll.analyzers.*
 import csense.kotlin.*
 import csense.kotlin.logger.*
-import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.idea.util.*
 import org.jetbrains.kotlin.idea.util.projectStructure.*
 import org.jetbrains.kotlin.psi.*
-import org.jetbrains.kotlin.psi.psiUtil.*
 import java.text.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.*
@@ -190,10 +186,10 @@ class BackgroundableWrapper(
         val fileIndex = ProjectFileIndex.SERVICE.getInstance(project)
         if (module.sourceRoots.isEmpty()) {
             //assume its the root project, thus we are to iterate over all "regular" modules
-            val otherModules = project.allModules().filterNot {
+            val otherModules: List<Module> = project.modules.filterNot { it: Module ->
                 it.isTestModule() && it.name != module.name
             }
-            otherModules.forEach {
+            otherModules.forEach { it: Module ->
                 runOnModule(it, fileIndex)
             }
 
@@ -232,62 +228,62 @@ class BackgroundableWrapper(
     private fun VirtualFile.visit(fileIndex: ProjectFileIndex) {
         val isSourceFile = extension == "kt" && fileIndex.isInSource(this) && !fileIndex.isInTestSourceContent(this)
         if (isSourceFile) {
-            val ktFile = this.toPsiFile(project) as? KtFile ?: return
-            //open file and analyze it.
-            if (ktFile.annotationEntries.containsSuppressionForMissingTest()) {
-                return
-            }
-
-            ktFile.collectDescendantsOfType<KtClassOrObject>().forEach {
-                if (it.isAnonymous()) {
-                    return@forEach
-                }
-
-                if (it.annotationEntries.containsSuppressionForMissingTest()) {
-                    seenClasses.incrementAndGet()
-                    testedClasses.incrementAndGet()
-                    skippedClassesFqPsi.add(it)
-                    return@forEach
-                }
-
-                val analyzeResult = MissingTestsForClassAnalyzer.analyze(it)
-                seenClasses.incrementAndGet()
-                if (analyzeResult.errors.isEmpty()) {
-                    testedClasses.incrementAndGet()
-                } else {
-                    missingClassesFqPsi.add(it)
-                }
-            }
-            ktFile.collectDescendantsOfType<KtNamedFunction>().forEach {
-                if (it.annotationEntries.containsSuppressionForMissingTest()) {
-                    seenMethods.incrementAndGet()
-                    testedMethods.incrementAndGet()
-                    skippedFunctionFqPsi.add(it)
-                    return@forEach
-                }
-                val analyzeResult = MissingtestsForFunctionAnalyzers.analyze(it, true)
-                seenMethods.incrementAndGet()
-                if (analyzeResult.errors.isEmpty()) {
-                    testedMethods.incrementAndGet()
-                } else {
-                    missingFunctionFqPsi.add(it)
-                }
-            }
-            ktFile.collectDescendantsOfType<KtProperty>().forEach {
-                if (it.annotationEntries.containsSuppressionForMissingTest()) {
-                    seenProperties.incrementAndGet()
-                    testedProperties.incrementAndGet()
-                    skippedPropertiesFqPsi.add(it)
-                    return@forEach
-                }
-                val analyzeResult = MissingTestsForPropertyAnalyzer.analyze(it)
-                seenProperties.incrementAndGet()
-                if (analyzeResult.errors.isEmpty()) {
-                    testedProperties.incrementAndGet()
-                } else {
-                    missingPropertiesFqPsi.add(it)
-                }
-            }
+//            val ktFile = this.toPsiFile(project) as? KtFile ?: return
+//            //open file and analyze it.
+//            if (ktFile.annotationEntries.containsSuppressionForMissingTest()) {
+//                return
+//            }
+//
+//            ktFile.collectDescendantsOfType<KtClassOrObject>().forEach {
+//                if (it.isAnonymous()) {
+//                    return@forEach
+//                }
+//
+//                if (it.annotationEntries.containsSuppressionForMissingTest()) {
+//                    seenClasses.incrementAndGet()
+//                    testedClasses.incrementAndGet()
+//                    skippedClassesFqPsi.add(it)
+//                    return@forEach
+//                }
+//
+//                val analyzeResult = MissingTestsForClassAnalyzer.analyze(it)
+//                seenClasses.incrementAndGet()
+//                if (analyzeResult.errors.isEmpty()) {
+//                    testedClasses.incrementAndGet()
+//                } else {
+//                    missingClassesFqPsi.add(it)
+//                }
+//            }
+//            ktFile.collectDescendantsOfType<KtNamedFunction>().forEach {
+//                if (it.annotationEntries.containsSuppressionForMissingTest()) {
+//                    seenMethods.incrementAndGet()
+//                    testedMethods.incrementAndGet()
+//                    skippedFunctionFqPsi.add(it)
+//                    return@forEach
+//                }
+//                val analyzeResult = MissingtestsForFunctionAnalyzers.analyze(it, true)
+//                seenMethods.incrementAndGet()
+//                if (analyzeResult.errors.isEmpty()) {
+//                    testedMethods.incrementAndGet()
+//                } else {
+//                    missingFunctionFqPsi.add(it)
+//                }
+//            }
+//            ktFile.collectDescendantsOfType<KtProperty>().forEach {
+//                if (it.annotationEntries.containsSuppressionForMissingTest()) {
+//                    seenProperties.incrementAndGet()
+//                    testedProperties.incrementAndGet()
+//                    skippedPropertiesFqPsi.add(it)
+//                    return@forEach
+//                }
+//                val analyzeResult = MissingTestsForPropertyAnalyzer.analyze(it)
+//                seenProperties.incrementAndGet()
+//                if (analyzeResult.errors.isEmpty()) {
+//                    testedProperties.incrementAndGet()
+//                } else {
+//                    missingPropertiesFqPsi.add(it)
+//                }
+//            }
         } else {
             children.forEach {
                 it.visit(fileIndex)
@@ -305,4 +301,3 @@ private fun List<KtAnnotationEntry>.containsSuppressionForMissingTest(): Boolean
         it.text.equals("\"MissingTestFunction\"")
     }
 }
-

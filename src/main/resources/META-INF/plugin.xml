@@ -7,7 +7,7 @@
 
     <description><![CDATA[
     A plugin that helps you with testing your code.(junit only at this time)<br/>
-    For example it provides:  <br/>
+    For example, it provides:  <br/>
     <ul>
     <li> highlights functions that are missing tests</li>
     <li> highlights classes that are not tested</li>
@@ -22,9 +22,15 @@
     <extensions defaultExtensionNs="com.intellij">
         <inspectionToolProvider
                 implementation="csense.idea.kotlin.test.inspections.InspectionsProvider"/>
+
         <codeInsight.lineMarkerProvider
                 language="kotlin"
                 implementationClass="csense.idea.kotlin.test.testNavigation.TestNavigationFunctionProvider"/>
+
+        <codeInsight.lineMarkerProvider
+                language="kotlin"
+                implementationClass="csense.idea.kotlin.test.testNavigation.TestedCodeNavigationFunctionProvider"/>
+
         <codeInsight.lineMarkerProvider
                 language="kotlin"
                 implementationClass="csense.idea.kotlin.test.testNavigation.TestNavigationVariableProvider"/>
@@ -37,8 +43,5 @@
                                  instance="csense.idea.kotlin.test.settings.SettingsPage"/>
     </extensions>
 
-    <actions>
-        <!-- Add your actions here -->
-    </actions>
-    <idea-version since-build="213"/>
+    <idea-version since-build="223"/>
 </idea-plugin>

@@ -1,4 +1,4 @@
-package csense.idea.kotlin.test.inspections.emptyTest
+package csense.idea.kotlin.test.inspections.missingTestAnnotation
 
 import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
@@ -6,34 +6,28 @@ import csense.idea.base.bll.*
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.bll.frameworks.*
 import csense.idea.kotlin.test.bll.psi.*
-import csense.idea.kotlin.test.inspections.emptyTest.fixes.*
+import csense.idea.kotlin.test.inspections.missingTestAnnotation.fixes.*
 import org.jetbrains.kotlin.idea.inspections.*
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.*
 
-/*
-- mark empty tests (functions marked with @Test but with no real code in them)
-    - quickfix is add @Ignore
- */
-class EmptyTestInspection : AbstractKotlinInspection() {
+class MissingTestAnnotationInspection : AbstractKotlinInspection() {
 
     override fun getDisplayName(): String {
-        return "Tests either missing assertions or is empty"
+        return "Highlights functions that looks like test but are not marked as tests"
     }
 
     override fun getStaticDescription(): String {
-        return "Highlights tests that are not ignore but are empty or missing assertion(s)"
+        return "Highlights functions that looks like test but are not marked as tests"
     }
 
     override fun getDefaultLevel(): HighlightDisplayLevel {
         return HighlightDisplayLevel.ERROR
     }
 
-    override fun getDescriptionFileName(): String {
-        return "Highlights tests that are not ignore but are empty or missing assertion(s)"
-    }
 
     override fun getShortName(): String {
-        return "MissingTestCode"
+        return "MissingTestAnnotation"
     }
 
     override fun getGroupDisplayName(): String {
@@ -49,53 +43,49 @@ class EmptyTestInspection : AbstractKotlinInspection() {
         isOnTheFly: Boolean
     ): KtVisitorVoid = namedFunctionVisitor { ourFnc: KtNamedFunction ->
         val file: KtFile = ourFnc.containingKtFile
-
-        val shouldIgnore: Boolean = file.shouldIgnore() || ourFnc.shouldIgnore()
-        if (shouldIgnore) {
+        if (file.isNotInTestModule()) {
             return@namedFunctionVisitor
         }
 
-        val isValidTest: Boolean = ourFnc.containsAssertInCalls()
-        if (isValidTest) {
+        if (ourFnc.isValidTestFunction()) {
             return@namedFunctionVisitor
         }
 
         val testFramework: TestFramework = file.guessBestTestFrameworkOrKotlinTest()
-
-        reportEmptyTest(
+        reportMissingTestAnnotation(
             function = ourFnc,
             forFramework = testFramework,
             holder = holder
         )
     }
 
-    private fun reportEmptyTest(
+    private fun reportMissingTestAnnotation(
         function: KtNamedFunction,
         forFramework: TestFramework,
         holder: ProblemsHolder
     ) {
-
-
         holder.registerProblemSafe(
             psiElement = function.nameIdentifier ?: function,
-            descriptionTemplate = "Test is either empty or missing assert statements",
+            descriptionTemplate = "This appears as a test but is not marked as such",
             fixes = arrayOf(
-                AddIgnoreQuickFix(
-                    onFunction = function,
-                    framework = forFramework
-                )
+                AddTestAnnotationQuickFix(onFunction = function, framework = forFramework)
             )
         )
     }
 
-    private fun KtFile.shouldIgnore(): Boolean {
-        return isNotInTestModule()
-    }
-
-    private fun KtNamedFunction.shouldIgnore(): Boolean {
-        return isNotAnnotatedTest() || isAnnotatedIgnore()
+    private fun KtNamedFunction.isValidTestFunction(): Boolean {
+        if (containsAssertInName()) {
+            return true
+        }
+        if (isPrivate()) {
+            return true
+        }
+        if (isAnnotatedTest() || isAnnotatedIgnore()) {
+            return true
+        }
+        if (containsAssertInCalls()) {
+            return true
+        }
+        return false
     }
 }
-
-
-

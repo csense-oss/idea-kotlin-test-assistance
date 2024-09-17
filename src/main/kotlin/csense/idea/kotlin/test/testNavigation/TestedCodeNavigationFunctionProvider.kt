@@ -8,22 +8,19 @@ import csense.idea.kotlin.test.bll.psi.*
 import csense.idea.kotlin.test.testNavigation.bll.*
 import org.jetbrains.kotlin.psi.*
 
-
-class TestNavigationVariableProvider : LineMarkerProvider {
+class TestedCodeNavigationFunctionProvider : LineMarkerProvider {
     override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
-        val method: KtProperty = element.getKtPropertyFromLineMarkerIdentifierLeaf() ?: return null
-        if (method.isInTestModule()) {
+        val method: KtNamedFunction = element.getKtNamedFunctionFromLineMarkerIdentifierLeaf() ?: return null
+        if (!method.isInTestModule()) {
             return null
         }
+
         val testMethod: List<PsiElement> = method.getTestedMethod()
         val firstTestMethod: PsiElement = testMethod.firstOrNull() ?: return null
-        if (testMethod.isEmpty()) {
-            return null
-        }
-        return NavigateToTestCaseLineMarkerInfo(
-            element = element,
+        return NavigateToTestedCodeLineMarkerInfo(
+            element = method,
             testMethod = firstTestMethod
         )
+
     }
 }
-

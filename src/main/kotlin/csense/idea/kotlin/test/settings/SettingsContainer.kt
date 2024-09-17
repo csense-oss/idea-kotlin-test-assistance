@@ -26,8 +26,15 @@ object SettingsContainer {
 
     private const val generateAssertStatementOfNameName = settingsPrefixed + "generateAssertStatementOfName"
     var generateAssertStatementOfName: String
-        get() = backend.getValue(generateAssertStatementOfNameName, "csense")
-        set(value) = backend.setValue(generateAssertStatementOfNameName, value, "csense")
+        get() = backend.getValue(
+            /* name = */ generateAssertStatementOfNameName,
+            /* defaultValue = */ "csense"
+        )
+        set(value) = backend.setValue(
+            /* name = */ generateAssertStatementOfNameName,
+            /* value = */ value,
+            /* defaultValue = */ "csense"
+        )
 }
 
 fun String.toTestAssertionType(): TestAssertionType {

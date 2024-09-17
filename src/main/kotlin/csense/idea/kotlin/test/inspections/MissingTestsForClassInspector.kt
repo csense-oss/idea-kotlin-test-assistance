@@ -3,7 +3,6 @@ package csense.idea.kotlin.test.inspections
 import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
 import csense.idea.kotlin.test.bll.*
-import csense.idea.kotlin.test.bll.analyzers.*
 import org.jetbrains.kotlin.idea.inspections.*
 import org.jetbrains.kotlin.psi.*
 
@@ -42,10 +41,10 @@ class MissingTestsForClassInspector : AbstractKotlinInspection() {
         isOnTheFly: Boolean
     ): KtVisitorVoid {
         return classOrObjectVisitor { outerClass ->
-            val result = MissingTestsForClassAnalyzer.analyze(outerClass)
-            result.errors.forEach {
-                holder.registerProblem(it)
-            }
+//            val result = MissingTestsForClassAnalyzer.analyze(outerClass)
+//            result.errors.forEach {
+//                holder.registerProblem(it)
+//            }
         }
     }
 }

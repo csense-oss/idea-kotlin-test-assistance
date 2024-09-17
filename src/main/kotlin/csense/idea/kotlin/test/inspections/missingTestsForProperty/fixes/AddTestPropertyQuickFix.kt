@@ -1,4 +1,4 @@
-package csense.idea.kotlin.test.quickfixes
+package csense.idea.kotlin.test.inspections.missingTestsForProperty.fixes
 
 import com.intellij.codeInsight.daemon.*
 import com.intellij.codeInspection.*
@@ -30,14 +30,14 @@ class AddTestPropertyQuickFix(
         startElement: PsiElement,
         endElement: PsiElement
     ) {
-        val prop = startElement as KtProperty
-        val safeName = testName.safeFunctionName()
+        val prop: KtProperty = startElement as KtProperty
+        val safeName: String = testName.safeFunctionName()
         val ktPsiFactory = KtPsiFactory(project)
-        val code = prop.computeMostViableSimpleTestData(safeName, ktPsiFactory)
+        val code: PsiElement = prop.computeMostViableSimpleTestData(safeName, ktPsiFactory)
 
-        project.executeWriteCommand("update test class") {
+        project.executeWriteCommand("Update Test Class") {
             try {
-                val body = whereToWrite.getOrCreateBody()
+                val body: KtClassBody = whereToWrite.getOrCreateBody()
                 body.addBefore(code, body.lastChild)
             } catch (e: Throwable) {
                 TODO("Add error handling here")
