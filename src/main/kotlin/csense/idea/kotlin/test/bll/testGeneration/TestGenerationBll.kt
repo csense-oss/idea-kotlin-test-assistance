@@ -21,6 +21,7 @@ fun PsiClass.isClassContainedIn(containingName: String): Boolean {
 
 private fun String.wrapInAsFunction(safeTestName: String, ktPsiFactory: KtPsiFactory): KtNamedFunction {
     return ktPsiFactory.createFunction(
+        //language=kotlin
         """
         @Test
         fun $safeTestName(){

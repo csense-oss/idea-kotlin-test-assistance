@@ -2,13 +2,14 @@ package csense.idea.kotlin.test.inspections.missingTestsForFunction
 
 import com.intellij.codeHighlighting.*
 import com.intellij.codeInspection.*
+import com.intellij.openapi.module.*
 import csense.idea.base.bll.*
 import csense.idea.kotlin.test.bll.*
 import csense.idea.kotlin.test.bll.frameworks.*
 import csense.idea.kotlin.test.bll.psi.*
 import csense.idea.kotlin.test.bll.testGeneration.generationSteps.*
 import csense.idea.kotlin.test.inspections.missingTestsForFunction.fixes.*
-import org.jetbrains.kotlin.idea.inspections.*
+import org.jetbrains.kotlin.idea.codeinsight.api.classic.inspections.*
 import org.jetbrains.kotlin.psi.*
 
 class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
@@ -76,7 +77,12 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
     private fun createQuickfix(
         function: KtNamedFunction
     ): AddTestMethodByStepsQuickFix {
-        val neededStepsBeforeAddingFunction: List<TestCodeGenerationStep> = getMissingStepsToGetTestClass()
+        val fqNameForPackage: String = function.fqNameForTestClass() //TODO
+        val neededStepsBeforeAddingFunction: List<TestCodeGenerationStep> = getMissingStepsToGetTestClass(
+            fqNameForPackage,
+            fqNameForPackage,
+            ModuleUtilCore.findModuleForPsiElement(function)
+        )
         val createFunctionStep = CreateTestMethodGenerationStep(function.fqNameForTestClass())
 
         return AddTestMethodByStepsQuickFix(
@@ -97,14 +103,43 @@ class MissingTestsForFunctionInspector : AbstractKotlinInspection() {
         return AssertionsFramework.Csense
     }
 
-    private fun getMissingStepsToGetTestClass(): List<TestCodeGenerationStep> {
+    private fun getMissingStepsToGetTestClass(
+        packageFqName: String,
+        classFqName: String,
+        codeModule: Module?
+    ): List<TestCodeGenerationStep> {
+        if (codeModule == null) {
+            return emptyList()
+        }
         val result: MutableList<TestCodeGenerationStep> = mutableListOf()
-//        if (!hasTestPackage()) {
-//            result += CreateTestPackageGenerationStep()
-//        }
-//        if (!hasTestClass()) {
-//            result += CreateTestClassGenerationStep()
-//        }
+        if (!hasTestPackage()) {
+            result += CreateTestPackageGenerationStep(
+                packageFqName = packageFqName,
+                forModule = codeModule
+            )
+        }
+        if (!hasTestClass()) {
+            result += CreateTestClassGenerationStep(
+                classFqName = classFqName
+            )
+        }
+        if (!hasTestMethod()) {
+            result += CreateTestMethodGenerationStep(
+                methodFqName = "TODO"
+            )
+        }
         return result
+    }
+
+    private fun hasTestPackage(): Boolean {
+        return false
+    }
+
+    private fun hasTestClass(): Boolean {
+        return false
+    }
+
+    private fun hasTestMethod(): Boolean {
+        return false
     }
 }

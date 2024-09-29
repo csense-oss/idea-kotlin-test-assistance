@@ -83,9 +83,7 @@ class MissingTestAnnotationInspection : AbstractKotlinInspection() {
         if (isAnnotatedTest() || isAnnotatedIgnore()) {
             return true
         }
-        if (containsAssertInCalls()) {
-            return true
-        }
-        return false
+        return !containsAssertInCalls()
+
     }
 }

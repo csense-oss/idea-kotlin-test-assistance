@@ -239,11 +239,11 @@ object KtNamedFunctionTestData {
         val allClassCases = findSealedClassInheritors()
         val casesToConsider = allClassCases.filter { it !in classesCasesToIgnore }
         //TODO improve this as well
-        val constructors: List<String> = casesToConsider.mapNotNull { ktClass: KtClassOrObject ->
+        val constructors: List<String> = casesToConsider.map { ktClass: KtClassOrObject ->
             val x = ktClass.computeTestCreationLookup(
                 classesCasesToIgnore = classesCasesToIgnore.plus(ktClass)
             )
-            x?.emptyParameter
+            x.emptyParameter
         }
         val first = constructors.firstOrNull() ?: return TestCreationLookup.empty
         return TestCreationLookup(
@@ -259,7 +259,7 @@ object KtNamedFunctionTestData {
 
     fun KtClassOrObject.computeTestCreationLookup(
         classesCasesToIgnore: Set<KtClassOrObject>
-    ): TestCreationLookup? {
+    ): TestCreationLookup {
         if (this is KtClass) {
             return computeTestCreationLookup(classesCasesToIgnore)
         }
@@ -274,7 +274,7 @@ object KtNamedFunctionTestData {
 
     fun KtClass.computeTestCreationLookup(
         classesCasesToIgnore: Set<KtClassOrObject>
-    ): TestCreationLookup? {
+    ): TestCreationLookup {
         //TODO do all constructors
         val name = name
         val args = if (allConstructors.isEmpty()) {

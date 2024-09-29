@@ -1,12 +1,15 @@
 package csense.idea.kotlin.test.bll.testGeneration
 
+import csense.kotlin.extensions.primitives.*
+
 fun computeListTestCode(
     testName: String,
     typeName: String,
     functionInvocationPattern: FunctionInvocationPattern
 ): String {
+    //language=kotlin
     return """
-        class ${testName.capitalize()} {
+        class ${testName.titleCaseFirstWord()} {
             @Test
             fun empty(){
                 //TODO test empty condition here.
@@ -22,7 +25,7 @@ fun computeListTestCode(
             @Test
             fun multiple(){
                 //TODO test multiple element condition here.
-                ${
+       ${
         functionInvocationPattern.toCode(
             listOf(
                 "listOf<$typeName>($typeName(),$typeName())"

@@ -7,7 +7,6 @@ import csense.idea.base.module.*
 import csense.idea.kotlin.test.bll.psi.*
 import csense.idea.kotlin.test.testNavigation.bll.*
 import org.jetbrains.kotlin.psi.*
-import org.jetbrains.kotlin.psi.psiUtil.*
 
 class TestedCodeNavigationFunctionProvider : LineMarkerProvider {
     override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
